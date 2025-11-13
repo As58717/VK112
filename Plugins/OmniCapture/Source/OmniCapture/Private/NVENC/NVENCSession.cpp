@@ -450,9 +450,21 @@ bool FNVENCSession::Open(ENVENCCodec Codec, void* InDevice, NV_ENC_DEVICE_TYPE I
             const TCHAR* FriendlyName = TEXT("");
         };
 
-        TArray<FValidationPreset, TInlineAllocator<4>> ValidationPresets;
-        ValidationPresets.Add({ ToWindowsGuid(FNVENCDefs::PresetDefaultGuid()), NV_ENC_TUNING_INFO_UNDEFINED, TEXT("NV_ENC_PRESET_DEFAULT") });
-        ValidationPresets.Add({ ToWindowsGuid(FNVENCDefs::PresetLowLatencyHighQualityGuid()), NV_ENC_TUNING_INFO_LOW_LATENCY, TEXT("NV_ENC_PRESET_LOW_LATENCY_HQ") });
+        TArray<FValidationPreset, TInlineAllocator<8>> ValidationPresets;
+        auto AddValidationPreset = [&ValidationPresets](const GUID& InGuid, NV_ENC_TUNING_INFO PreferredTuning, const TCHAR* FriendlyName)
+        {
+            ValidationPresets.Add({ InGuid, PreferredTuning, FriendlyName });
+        };
+
+        AddValidationPreset(ToWindowsGuid(FNVENCDefs::PresetDefaultGuid()), NV_ENC_TUNING_INFO_UNDEFINED, TEXT("NV_ENC_PRESET_DEFAULT"));
+        AddValidationPreset(ToWindowsGuid(FNVENCDefs::PresetLowLatencyHighQualityGuid()), NV_ENC_TUNING_INFO_LOW_LATENCY, TEXT("NV_ENC_PRESET_LOW_LATENCY_HQ"));
+        AddValidationPreset(ToWindowsGuid(FNVENCDefs::PresetP1Guid()), NV_ENC_TUNING_INFO_LOW_LATENCY, TEXT("NV_ENC_PRESET_P1"));
+        AddValidationPreset(ToWindowsGuid(FNVENCDefs::PresetP2Guid()), NV_ENC_TUNING_INFO_LOW_LATENCY, TEXT("NV_ENC_PRESET_P2"));
+        AddValidationPreset(ToWindowsGuid(FNVENCDefs::PresetP3Guid()), NV_ENC_TUNING_INFO_HIGH_QUALITY, TEXT("NV_ENC_PRESET_P3"));
+        AddValidationPreset(ToWindowsGuid(FNVENCDefs::PresetP4Guid()), NV_ENC_TUNING_INFO_HIGH_QUALITY, TEXT("NV_ENC_PRESET_P4"));
+        AddValidationPreset(ToWindowsGuid(FNVENCDefs::PresetP5Guid()), NV_ENC_TUNING_INFO_HIGH_QUALITY, TEXT("NV_ENC_PRESET_P5"));
+        AddValidationPreset(ToWindowsGuid(FNVENCDefs::PresetP6Guid()), NV_ENC_TUNING_INFO_HIGH_QUALITY, TEXT("NV_ENC_PRESET_P6"));
+        AddValidationPreset(ToWindowsGuid(FNVENCDefs::PresetP7Guid()), NV_ENC_TUNING_INFO_LOSSLESS, TEXT("NV_ENC_PRESET_P7"));
 
         auto QueryPreset = [&](void* InEncoderHandle, const GUID& InPresetGuid, NV_ENC_TUNING_INFO PreferredTuning, NV_ENC_PRESET_CONFIG& OutPresetConfig) -> NVENCSTATUS
         {
@@ -526,7 +538,7 @@ bool FNVENCSession::Open(ENVENCCodec Codec, void* InDevice, NV_ENC_DEVICE_TYPE I
 
             const FString StatusString = FNVENCDefs::StatusToString(LastPresetStatus);
 
-            if (LastPresetStatus == NV_ENC_ERR_INVALID_PARAM)
+            if (LastPresetStatus == NV_ENC_ERR_INVALID_PARAM || LastPresetStatus == NV_ENC_ERR_UNSUPPORTED_PARAM)
             {
                 UE_LOG(LogNVENCSession, Warning,
                     TEXT("NVENC preset %s unavailable (%s). Will attempt alternate presets during initialisation."),
