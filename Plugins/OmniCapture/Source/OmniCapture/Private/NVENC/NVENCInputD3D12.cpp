@@ -467,11 +467,11 @@ namespace OmniNVENC
         }
 
         FMemory::Memzero(&OutDescriptor, sizeof(NV_ENC_INPUT_RESOURCE_D3D12));
-        OutDescriptor.version = NV_ENC_INPUT_RESOURCE_D3D12_VER;
+        OutDescriptor.version = FNVENCDefs::PatchStructVersion(NV_ENC_INPUT_RESOURCE_D3D12_VER, ApiVersion);
         OutDescriptor.pInputBuffer = InMappedResource;
 
         FMemory::Memzero(&OutDescriptor.inputFencePoint, sizeof(NV_ENC_FENCE_POINT_D3D12));
-        OutDescriptor.inputFencePoint.version = NV_ENC_FENCE_POINT_D3D12_VER;
+        OutDescriptor.inputFencePoint.version = FNVENCDefs::PatchStructVersion(NV_ENC_FENCE_POINT_D3D12_VER, ApiVersion);
 
         if (Fence.IsValid())
         {

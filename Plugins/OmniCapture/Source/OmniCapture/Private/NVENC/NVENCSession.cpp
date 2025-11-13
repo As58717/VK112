@@ -339,14 +339,19 @@ bool FNVENCSession::Open(ENVENCCodec Codec, void* InDevice, NV_ENC_DEVICE_TYPE I
 
         NV_ENC_DEVICE_TYPE CandidateTypes[4] = {};
         int32 CandidateCount = 0;
-        TryAddCandidate(CandidateTypes, CandidateCount, InDeviceType);
 #if PLATFORM_WINDOWS
-        if (InDeviceType == NV_ENC_DEVICE_TYPE_DIRECTX)
+        if (InDeviceType == NV_ENC_DEVICE_TYPE_DIRECTX || InDeviceType == GetDirectX11DeviceType())
         {
             TryAddCandidate(CandidateTypes, CandidateCount, GetDirectX11DeviceType());
+        }
+#endif
+        TryAddCandidate(CandidateTypes, CandidateCount, InDeviceType);
+#if PLATFORM_WINDOWS
+        if (InDeviceType == GetDirectX11DeviceType())
+        {
             TryAddCandidate(CandidateTypes, CandidateCount, NV_ENC_DEVICE_TYPE_DIRECTX);
         }
-        else if (InDeviceType == GetDirectX11DeviceType())
+        else if (InDeviceType == NV_ENC_DEVICE_TYPE_DIRECTX)
         {
             TryAddCandidate(CandidateTypes, CandidateCount, NV_ENC_DEVICE_TYPE_DIRECTX);
         }
@@ -437,29 +442,46 @@ bool FNVENCSession::Open(ENVENCCodec Codec, void* InDevice, NV_ENC_DEVICE_TYPE I
         }
 
         const GUID CodecGuid = ToWindowsGuid(FNVENCDefs::CodecGuid(Codec));
-        const GUID PresetGuid = ToWindowsGuid(FNVENCDefs::PresetLowLatencyHighQualityGuid());
 
-        auto QueryPreset = [&](void* InEncoderHandle) -> NVENCSTATUS
+        struct FValidationPreset
+        {
+            GUID Guid;
+            NV_ENC_TUNING_INFO PreferredTuning = NV_ENC_TUNING_INFO_UNDEFINED;
+            const TCHAR* FriendlyName = TEXT("");
+        };
+
+        TArray<FValidationPreset, TInlineAllocator<4>> ValidationPresets;
+        ValidationPresets.Add({ ToWindowsGuid(FNVENCDefs::PresetDefaultGuid()), NV_ENC_TUNING_INFO_HIGH_QUALITY, TEXT("NV_ENC_PRESET_DEFAULT") });
+        ValidationPresets.Add({ ToWindowsGuid(FNVENCDefs::PresetLowLatencyHighQualityGuid()), NV_ENC_TUNING_INFO_LOW_LATENCY, TEXT("NV_ENC_PRESET_LOW_LATENCY_HQ") });
+
+        auto QueryPreset = [&](void* InEncoderHandle, const GUID& InPresetGuid, NV_ENC_TUNING_INFO PreferredTuning, NV_ENC_PRESET_CONFIG& OutPresetConfig) -> NVENCSTATUS
         {
             NV_ENC_PRESET_CONFIG PresetConfig = {};
             PresetConfig.version = FNVENCDefs::PatchStructVersion(NV_ENC_PRESET_CONFIG_VER, ApiVersion);
             PresetConfig.presetCfg.version = FNVENCDefs::PatchStructVersion(NV_ENC_CONFIG_VER, ApiVersion);
 
-            NVENCSTATUS Status = GetPresetConfig(InEncoderHandle, CodecGuid, PresetGuid, &PresetConfig);
+            NVENCSTATUS Status = GetPresetConfig(InEncoderHandle, CodecGuid, InPresetGuid, &PresetConfig);
             if (Status != NV_ENC_SUCCESS && GetPresetConfigEx)
             {
-                const NV_ENC_TUNING_INFO TuningAttempts[] =
+                TArray<NV_ENC_TUNING_INFO, TInlineAllocator<5>> TuningAttempts;
+                TuningAttempts.Add(PreferredTuning);
+                auto AddAttempt = [&TuningAttempts](NV_ENC_TUNING_INFO Attempt)
                 {
-                    NV_ENC_TUNING_INFO_LOW_LATENCY,
-                    NV_ENC_TUNING_INFO_HIGH_QUALITY,
-                    NV_ENC_TUNING_INFO_UNDEFINED,
-                    NV_ENC_TUNING_INFO_ULTRA_LOW_LATENCY,
-                    NV_ENC_TUNING_INFO_LOSSLESS,
+                    if (Attempt != NV_ENC_TUNING_INFO_UNDEFINED && !TuningAttempts.Contains(Attempt))
+                    {
+                        TuningAttempts.Add(Attempt);
+                    }
                 };
+
+                AddAttempt(NV_ENC_TUNING_INFO_LOW_LATENCY);
+                AddAttempt(NV_ENC_TUNING_INFO_HIGH_QUALITY);
+                AddAttempt(NV_ENC_TUNING_INFO_ULTRA_LOW_LATENCY);
+                AddAttempt(NV_ENC_TUNING_INFO_LOSSLESS);
+                TuningAttempts.Add(NV_ENC_TUNING_INFO_UNDEFINED);
 
                 for (NV_ENC_TUNING_INFO Tuning : TuningAttempts)
                 {
-                    Status = GetPresetConfigEx(InEncoderHandle, CodecGuid, PresetGuid, Tuning, &PresetConfig);
+                    Status = GetPresetConfigEx(InEncoderHandle, CodecGuid, InPresetGuid, Tuning, &PresetConfig);
                     if (Status == NV_ENC_SUCCESS)
                     {
                         break;
@@ -467,40 +489,77 @@ bool FNVENCSession::Open(ENVENCCodec Codec, void* InDevice, NV_ENC_DEVICE_TYPE I
                 }
             }
 
+            if (Status == NV_ENC_SUCCESS)
+            {
+                OutPresetConfig = PresetConfig;
+            }
+
             return Status;
         };
 
-        NVENCSTATUS Status = QueryPreset(Encoder);
-        if (Status != NV_ENC_SUCCESS && bAllowNullFallback && (Status == NV_ENC_ERR_INVALID_PARAM || Status == NV_ENC_ERR_INVALID_ENCODERDEVICE))
+        NVENCSTATUS LastPresetStatus = NV_ENC_ERR_NO_ENCODE_DEVICE;
+        bool bValidated = false;
+
+        for (const FValidationPreset& ValidationPreset : ValidationPresets)
         {
-            Status = QueryPreset(nullptr);
+            const FString PresetName = ValidationPreset.FriendlyName && *ValidationPreset.FriendlyName
+                ? FString(ValidationPreset.FriendlyName)
+                : FNVENCDefs::PresetGuidToString(FromWindowsGuid(ValidationPreset.Guid));
+
+            NV_ENC_PRESET_CONFIG PresetConfig = {};
+            LastPresetStatus = QueryPreset(Encoder, ValidationPreset.Guid, ValidationPreset.PreferredTuning, PresetConfig);
+
+            if (LastPresetStatus != NV_ENC_SUCCESS && bAllowNullFallback
+                && (LastPresetStatus == NV_ENC_ERR_INVALID_PARAM || LastPresetStatus == NV_ENC_ERR_INVALID_ENCODERDEVICE))
+            {
+                UE_LOG(LogNVENCSession, Verbose, TEXT("Retrying NVENC preset %s validation without encoder handle due to %s."),
+                    *PresetName, *FNVENCDefs::StatusToString(LastPresetStatus));
+                LastPresetStatus = QueryPreset(nullptr, ValidationPreset.Guid, ValidationPreset.PreferredTuning, PresetConfig);
+            }
+
+            if (LastPresetStatus == NV_ENC_SUCCESS)
+            {
+                UE_LOG(LogNVENCSession, Verbose, TEXT("NVENC preset validation ✓ %s"), *PresetName);
+                bValidated = true;
+                break;
+            }
+
+            const FString StatusString = FNVENCDefs::StatusToString(LastPresetStatus);
+
+            if (LastPresetStatus == NV_ENC_ERR_INVALID_PARAM)
+            {
+                UE_LOG(LogNVENCSession, Warning,
+                    TEXT("NVENC preset %s unavailable (%s). Will attempt alternate presets during initialisation."),
+                    *PresetName, *StatusString);
+                LastErrorMessage.Reset();
+                continue;
+            }
+
+            if (LastPresetStatus == NV_ENC_ERR_INVALID_ENCODERDEVICE)
+            {
+                UE_LOG(LogNVENCSession, Warning,
+                    TEXT("NVENC preset %s rejected the provided DirectX device (%s). Will attempt alternate presets during initialisation."),
+                    *PresetName, *StatusString);
+                LastErrorMessage.Reset();
+                continue;
+            }
+
+            UE_LOG(LogNVENCSession, Warning, TEXT("NvEncGetEncodePresetConfig validation failed for %s preset: %s"),
+                *PresetName, *StatusString);
+            break;
         }
 
-        if (Status != NV_ENC_SUCCESS)
+        if (!bValidated)
         {
-            const FString StatusString = FNVENCDefs::StatusToString(Status);
-
-            if (Status == NV_ENC_ERR_INVALID_PARAM)
+            const FString StatusString = FNVENCDefs::StatusToString(LastPresetStatus);
+            if (LastPresetStatus == NV_ENC_ERR_INVALID_ENCODERDEVICE)
             {
-                UE_LOG(LogNVENCSession, Warning,
-                    TEXT("NVENC preset NV_ENC_PRESET_LOW_LATENCY_HQ unavailable (%s). Will attempt alternate presets during initialisation."),
-                    *StatusString);
-                LastErrorMessage.Reset();
-                return true;
+                LastErrorMessage = FString::Printf(TEXT("NVENC runtime rejected the provided DirectX device (NV_ENC_ERR_INVALID_ENCODERDEVICE). Ensure that a supported NVIDIA GPU and recent drivers are installed. (%s)"), *StatusString);
             }
-
-            if (Status == NV_ENC_ERR_INVALID_ENCODERDEVICE)
+            else
             {
-                UE_LOG(LogNVENCSession, Warning,
-                    TEXT("NVENC preset NV_ENC_PRESET_LOW_LATENCY_HQ rejected the provided DirectX device (%s). Will attempt alternate presets during initialisation."),
-                    *StatusString);
-                LastErrorMessage.Reset();
-                return true;
+                LastErrorMessage = FString::Printf(TEXT("NvEncGetEncodePresetConfig validation failed: %s"), *StatusString);
             }
-
-            LastErrorMessage = FString::Printf(TEXT("NvEncGetEncodePresetConfig validation failed: %s"), *StatusString);
-
-            UE_LOG(LogNVENCSession, Warning, TEXT("NvEncGetEncodePresetConfig validation failed for NV_ENC_PRESET_LOW_LATENCY_HQ preset: %s"), *StatusString);
             return false;
         }
 
@@ -573,8 +632,8 @@ bool FNVENCSession::Open(ENVENCCodec Codec, void* InDevice, NV_ENC_DEVICE_TYPE I
             PresetCandidates.Add(Candidate);
         };
 
-        AddCandidate(ToWindowsGuid(FNVENCDefs::PresetLowLatencyHighQualityGuid()), NV_ENC_TUNING_INFO_LOW_LATENCY, TEXT("NV_ENC_PRESET_LOW_LATENCY_HQ"));
         AddCandidate(ToWindowsGuid(FNVENCDefs::PresetDefaultGuid()), NV_ENC_TUNING_INFO_HIGH_QUALITY, TEXT("NV_ENC_PRESET_DEFAULT"));
+        AddCandidate(ToWindowsGuid(FNVENCDefs::PresetLowLatencyHighQualityGuid()), NV_ENC_TUNING_INFO_LOW_LATENCY, TEXT("NV_ENC_PRESET_LOW_LATENCY_HQ"));
         AddCandidate(ToWindowsGuid(FNVENCDefs::PresetP1Guid()), NV_ENC_TUNING_INFO_LOW_LATENCY, TEXT("NV_ENC_PRESET_P1"));
         AddCandidate(ToWindowsGuid(FNVENCDefs::PresetP2Guid()), NV_ENC_TUNING_INFO_LOW_LATENCY, TEXT("NV_ENC_PRESET_P2"));
         AddCandidate(ToWindowsGuid(FNVENCDefs::PresetP3Guid()), NV_ENC_TUNING_INFO_HIGH_QUALITY, TEXT("NV_ENC_PRESET_P3"));
