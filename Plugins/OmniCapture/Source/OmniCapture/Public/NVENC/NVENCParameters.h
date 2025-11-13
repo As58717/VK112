@@ -37,12 +37,12 @@ namespace OmniNVENC
         int32 QPMin = -1;
         int32 QPMax = -1;
         ENVENCRateControlMode RateControlMode = ENVENCRateControlMode::CBR;
-        ENVENCMultipassMode MultipassMode = ENVENCMultipassMode::FULL;
+        ENVENCMultipassMode MultipassMode = ENVENCMultipassMode::DISABLED;
         bool bEnableLookahead = false;
         bool bEnableAdaptiveQuantization = false;
         bool bEnableIntraRefresh = false;
         bool bIntraRefreshOnSceneChange = false;
-        uint32 GOPLength = 0;
+        uint32 GOPLength = 120;
     };
 
     /** Helper that serialises NVENC parameters for debugging. */

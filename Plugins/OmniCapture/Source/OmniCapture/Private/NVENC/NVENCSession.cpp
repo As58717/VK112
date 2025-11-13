@@ -451,7 +451,7 @@ bool FNVENCSession::Open(ENVENCCodec Codec, void* InDevice, NV_ENC_DEVICE_TYPE I
         };
 
         TArray<FValidationPreset, TInlineAllocator<4>> ValidationPresets;
-        ValidationPresets.Add({ ToWindowsGuid(FNVENCDefs::PresetDefaultGuid()), NV_ENC_TUNING_INFO_HIGH_QUALITY, TEXT("NV_ENC_PRESET_DEFAULT") });
+        ValidationPresets.Add({ ToWindowsGuid(FNVENCDefs::PresetDefaultGuid()), NV_ENC_TUNING_INFO_UNDEFINED, TEXT("NV_ENC_PRESET_DEFAULT") });
         ValidationPresets.Add({ ToWindowsGuid(FNVENCDefs::PresetLowLatencyHighQualityGuid()), NV_ENC_TUNING_INFO_LOW_LATENCY, TEXT("NV_ENC_PRESET_LOW_LATENCY_HQ") });
 
         auto QueryPreset = [&](void* InEncoderHandle, const GUID& InPresetGuid, NV_ENC_TUNING_INFO PreferredTuning, NV_ENC_PRESET_CONFIG& OutPresetConfig) -> NVENCSTATUS
@@ -632,7 +632,7 @@ bool FNVENCSession::Open(ENVENCCodec Codec, void* InDevice, NV_ENC_DEVICE_TYPE I
             PresetCandidates.Add(Candidate);
         };
 
-        AddCandidate(ToWindowsGuid(FNVENCDefs::PresetDefaultGuid()), NV_ENC_TUNING_INFO_HIGH_QUALITY, TEXT("NV_ENC_PRESET_DEFAULT"));
+        AddCandidate(ToWindowsGuid(FNVENCDefs::PresetDefaultGuid()), NV_ENC_TUNING_INFO_UNDEFINED, TEXT("NV_ENC_PRESET_DEFAULT"));
         AddCandidate(ToWindowsGuid(FNVENCDefs::PresetLowLatencyHighQualityGuid()), NV_ENC_TUNING_INFO_LOW_LATENCY, TEXT("NV_ENC_PRESET_LOW_LATENCY_HQ"));
         AddCandidate(ToWindowsGuid(FNVENCDefs::PresetP1Guid()), NV_ENC_TUNING_INFO_LOW_LATENCY, TEXT("NV_ENC_PRESET_P1"));
         AddCandidate(ToWindowsGuid(FNVENCDefs::PresetP2Guid()), NV_ENC_TUNING_INFO_LOW_LATENCY, TEXT("NV_ENC_PRESET_P2"));
@@ -802,7 +802,7 @@ bool FNVENCSession::Open(ENVENCCodec Codec, void* InDevice, NV_ENC_DEVICE_TYPE I
 
         if (Parameters.Codec == ENVENCCodec::H264)
         {
-            EncodeConfig.profileGUID = NV_ENC_H264_PROFILE_HIGH_GUID;
+            EncodeConfig.profileGUID = NV_ENC_H264_PROFILE_MAIN_GUID;
             EncodeConfig.encodeCodecConfig.h264Config.idrPeriod = EncodeConfig.gopLength;
         }
         else
@@ -812,6 +812,12 @@ bool FNVENCSession::Open(ENVENCCodec Codec, void* InDevice, NV_ENC_DEVICE_TYPE I
         }
 
         NvBufferFormat = ToNVFormat(Parameters.BufferFormat);
+        if (Parameters.Codec == ENVENCCodec::H264 && Parameters.BufferFormat != ENVENCBufferFormat::NV12)
+        {
+            UE_LOG(LogNVENCSession, Warning,
+                TEXT("NVENC session switching H.264 input format to NV12 8-bit 4:2:0 for compatibility."));
+            NvBufferFormat = NV_ENC_BUFFER_FORMAT_NV12;
+        }
 
         InitializeParams = {};
         InitializeParams.version = FNVENCDefs::PatchStructVersion(NV_ENC_INITIALIZE_PARAMS_VER, ApiVersion);
