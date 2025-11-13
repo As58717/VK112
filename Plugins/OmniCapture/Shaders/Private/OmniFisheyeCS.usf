@@ -1,0 +1,157 @@
+#include "/Engine/Private/Common.ush"
+
+RWTexture2D<float4> OutputTexture;
+Texture2DArray<float4> LeftFaces;
+Texture2DArray<float4> RightFaces;
+SamplerState FaceSampler;
+
+cbuffer FOmniFisheyeParameters
+{
+    float2 OutputResolution;
+    float2 EyeResolution;
+    float FovRadians;
+    int FaceResolution;
+    int bStereo;
+    int StereoLayout;
+    int bHalfSphere;
+    float SeamStrength;
+    float Padding;
+};
+
+void DirectionToFaceUV(float3 Direction, out uint FaceIndex, out float2 FaceUV)
+{
+    float3 AbsDir = abs(Direction);
+
+    if (AbsDir.x >= AbsDir.y && AbsDir.x >= AbsDir.z)
+    {
+        if (Direction.x > 0.0f)
+        {
+            FaceIndex = 0;
+            FaceUV = float2(-Direction.z, Direction.y) / AbsDir.x;
+        }
+        else
+        {
+            FaceIndex = 1;
+            FaceUV = float2(Direction.z, Direction.y) / AbsDir.x;
+        }
+    }
+    else if (AbsDir.y >= AbsDir.x && AbsDir.y >= AbsDir.z)
+    {
+        if (Direction.y > 0.0f)
+        {
+            FaceIndex = 2;
+            FaceUV = float2(Direction.x, -Direction.z) / AbsDir.y;
+        }
+        else
+        {
+            FaceIndex = 3;
+            FaceUV = float2(Direction.x, Direction.z) / AbsDir.y;
+        }
+    }
+    else
+    {
+        if (Direction.z > 0.0f)
+        {
+            FaceIndex = 4;
+            FaceUV = float2(Direction.x, Direction.y) / AbsDir.z;
+        }
+        else
+        {
+            FaceIndex = 5;
+            FaceUV = float2(-Direction.x, Direction.y) / AbsDir.z;
+        }
+    }
+
+    FaceUV = (FaceUV + 1.0f) * 0.5f;
+
+    float Resolution = float(FaceResolution);
+    float Scale = lerp(1.0f, (Resolution - 1.0f) / Resolution, SeamStrength);
+    float Bias = (0.5f / Resolution) * SeamStrength;
+    FaceUV = FaceUV * Scale + Bias;
+    FaceUV = saturate(FaceUV);
+}
+
+float4 SampleCubemap(Texture2DArray<float4> Faces, float3 Direction)
+{
+    uint FaceIndex;
+    float2 FaceUV;
+    DirectionToFaceUV(Direction, FaceIndex, FaceUV);
+    return Faces.SampleLevel(FaceSampler, float3(FaceUV, FaceIndex), 0.0f);
+}
+
+float3 DirectionFromFisheye(uint2 Pixel, float2 EyeRes, float Fov, out bool bValid)
+{
+    float2 UV = (float2(Pixel) + 0.5f) / EyeRes;
+    float2 Normalized = float2(UV.x * 2.0f - 1.0f, 1.0f - UV.y * 2.0f);
+
+    float Radius = length(Normalized);
+    if (Radius > 1.0f)
+    {
+        bValid = false;
+        return float3(0.0f, 0.0f, 0.0f);
+    }
+
+    float HalfFov = clamp(Fov * 0.5f, 0.0f, PI);
+    float Theta = Radius * HalfFov;
+    float Phi = atan2(Normalized.y, Normalized.x);
+    float SinTheta = sin(Theta);
+
+    float3 Direction;
+    Direction.x = cos(Theta);
+    Direction.y = SinTheta * sin(Phi);
+    Direction.z = SinTheta * cos(Phi);
+
+    bValid = true;
+    return normalize(Direction);
+}
+
+[numthreads(8, 8, 1)]
+void MainCS(uint3 DispatchThreadID : SV_DispatchThreadID)
+{
+    if (DispatchThreadID.x >= uint(OutputResolution.x) || DispatchThreadID.y >= uint(OutputResolution.y))
+    {
+        return;
+    }
+
+    bool bUseStereo = (bStereo != 0);
+    bool bTopBottom = (StereoLayout == 0);
+
+    uint2 EyePixel = DispatchThreadID.xy;
+    float2 EyeRes = EyeResolution;
+    bool bRightEye = false;
+
+    if (bUseStereo)
+    {
+        if (bTopBottom)
+        {
+            uint EyeHeight = uint(EyeResolution.y);
+            bRightEye = DispatchThreadID.y >= EyeHeight;
+            EyePixel.y = DispatchThreadID.y % EyeHeight;
+            EyeRes = float2(EyeResolution.x, float(EyeHeight));
+        }
+        else
+        {
+            uint EyeWidth = uint(EyeResolution.x);
+            bRightEye = DispatchThreadID.x >= EyeWidth;
+            EyePixel.x = DispatchThreadID.x % EyeWidth;
+            EyeRes = float2(float(EyeWidth), EyeResolution.y);
+        }
+    }
+
+    bool bValid = false;
+    float3 Direction = DirectionFromFisheye(EyePixel, EyeRes, FovRadians, bValid);
+    if (!bValid)
+    {
+        OutputTexture[DispatchThreadID.xy] = float4(0.0f, 0.0f, 0.0f, 0.0f);
+        return;
+    }
+
+    if (bHalfSphere != 0 && Direction.x < 0.0f)
+    {
+        OutputTexture[DispatchThreadID.xy] = float4(0.0f, 0.0f, 0.0f, 0.0f);
+        return;
+    }
+
+    float4 Color = SampleCubemap(bRightEye ? RightFaces : LeftFaces, Direction);
+    OutputTexture[DispatchThreadID.xy] = Color;
+}

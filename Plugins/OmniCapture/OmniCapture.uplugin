@@ -1,0 +1,47 @@
+{
+  "FileVersion": 3,
+  "Version": 1,
+  "VersionName": "0.1.1",
+  "FriendlyName": "Omni Capture",
+  "Description": "Windows-only 360 capture pipeline with cubemap rig, RDG conversion, PNG/NVENC output, and audio sync.",
+  "Category": "Rendering",
+  "CreatedBy": "OmniTools",
+  "CreatedByURL": "https://example.com",
+  "DocsURL": "https://example.com/docs",
+  "MarketplaceURL": "https://example.com/marketplace",
+  "SupportURL": "https://example.com/support",
+  "CanContainContent": false,
+  "IsBetaVersion": true,
+  "IsExperimentalVersion": true,
+  "Installed": false,
+  "SupportedTargetPlatforms": [ "Win64" ],
+  "Modules": [
+    {
+      "Name": "OmniCapture",
+      "Type": "Runtime",
+      "LoadingPhase": "PreDefault",
+      "AdditionalDependencies": [
+        "RenderCore",
+        "RHI",
+        "Projects",
+        "Engine",
+        "AudioMixer",
+        "ImageWriteQueue",
+        "ImageCore"
+      ]
+    },
+    {
+      "Name": "OmniCaptureEditor",
+      "Type": "Editor",
+      "LoadingPhase": "PostEngineInit"
+    }
+  ],
+  "EngineVersion": "",
+  "Plugins": [
+    {
+      "Name": "MovieRenderPipeline",
+      "Enabled": true
+    }
+  ]
+}
+

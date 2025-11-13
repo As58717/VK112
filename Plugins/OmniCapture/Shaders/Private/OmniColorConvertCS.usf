@@ -1,0 +1,137 @@
+#include "/Engine/Public/Platform.ush"
+#include "/Engine/Private/Common.ush"
+
+Texture2D<float4> SourceTexture : register(t0);
+SamplerState SourceSampler : register(s0);
+
+RWTexture2D<uint> OutLuma : register(u0);
+RWTexture2D<uint2> OutChroma : register(u1);
+RWTexture2D<uint> OutBGRA : register(u2);
+
+cbuffer FOmniColorConvertParameters : register(b0)
+{
+    float2 OutputSize;
+    float2 ChromaSize;
+    uint Format; // 0 = NV12, 1 = P010
+    uint ColorSpace; // 0 = BT709, 1 = BT2020, 2 = HDR10 (BT2020 PQ)
+    uint bLinearInput; // 0 = sRGB, 1 = linear
+};
+
+static const float3x3 Rec709Matrix = float3x3(
+    0.2126f, 0.7152f, 0.0722f,
+   -0.114572f, -0.385428f, 0.5f,
+    0.5f, -0.454153f, -0.045847f);
+
+static const float3x3 Rec2020Matrix = float3x3(
+    0.2627f, 0.6780f, 0.0593f,
+   -0.139630f, -0.360370f, 0.500000f,
+    0.500000f, -0.459786f, -0.040214f);
+
+float3x3 GetMatrix(uint Space)
+{
+    return (Space == 1u || Space == 2u) ? Rec2020Matrix : Rec709Matrix;
+}
+
+float3 ApplyGamma(float3 RGB, uint bIsLinear)
+{
+    if (bIsLinear == 0u)
+    {
+        return RGB;
+    }
+    return LinearToSRGB(RGB);
+}
+
+float3 SampleColor(float2 PixelCoord)
+{
+    float2 UV = (PixelCoord + 0.5f) / OutputSize;
+    float3 RGB = SourceTexture.SampleLevel(SourceSampler, UV, 0).rgb;
+    return ApplyGamma(RGB, bLinearInput);
+}
+
+float3 RGBToYUV(float3 RGB, uint Space)
+{
+    float3x3 M = GetMatrix(Space);
+    float3 YUV;
+    YUV.x = dot(M[0], RGB);
+    YUV.y = dot(M[1], RGB);
+    YUV.z = dot(M[2], RGB);
+    return YUV;
+}
+
+float EncodeLuma(float Y, uint FormatMode)
+{
+    if (FormatMode == 0u)
+    {
+        return saturate((Y * 219.0f + 16.0f) / 255.0f) * 255.0f;
+    }
+    return saturate((Y * 876.0f + 64.0f) / 1023.0f) * 1023.0f;
+}
+
+float2 EncodeChroma(float2 UV, uint FormatMode)
+{
+    if (FormatMode == 0u)
+    {
+        float2 Encoded = saturate((UV * 224.0f + 128.0f) / 255.0f) * 255.0f;
+        return Encoded;
+    }
+    float2 Encoded10 = saturate((UV * 896.0f + 512.0f) / 1023.0f) * 1023.0f;
+    return Encoded10;
+}
+
+[numthreads(8, 8, 1)]
+void ConvertLuma(uint3 ThreadId : SV_DispatchThreadID)
+{
+    if (ThreadId.x >= uint(OutputSize.x) || ThreadId.y >= uint(OutputSize.y))
+    {
+        return;
+    }
+
+    float3 RGB = SampleColor(float2(ThreadId.xy));
+    float3 YUV = RGBToYUV(RGB, ColorSpace);
+    float Encoded = EncodeLuma(YUV.x, Format);
+    OutLuma[ThreadId.xy] = (uint)round(Encoded);
+}
+
+[numthreads(8, 8, 1)]
+void ConvertChroma(uint3 ThreadId : SV_DispatchThreadID)
+{
+    if (ThreadId.x >= uint(ChromaSize.x) || ThreadId.y >= uint(ChromaSize.y))
+    {
+        return;
+    }
+
+    uint2 BasePixel = ThreadId.xy * 2u;
+    float3 C0 = SampleColor(float2(BasePixel));
+    float3 C1 = SampleColor(float2(BasePixel + uint2(1, 0)));
+    float3 C2 = SampleColor(float2(BasePixel + uint2(0, 1)));
+    float3 C3 = SampleColor(float2(BasePixel + uint2(1, 1)));
+    float3 AverageRGB = (C0 + C1 + C2 + C3) * 0.25f;
+    float3 YUV = RGBToYUV(AverageRGB, ColorSpace);
+    float2 Encoded = EncodeChroma(YUV.yz, Format);
+    OutChroma[ThreadId.xy] = uint2(round(Encoded.x), round(Encoded.y));
+}
+
+[numthreads(8, 8, 1)]
+void ConvertBGRA(uint3 ThreadId : SV_DispatchThreadID)
+{
+    if (ThreadId.x >= uint(OutputSize.x) || ThreadId.y >= uint(OutputSize.y))
+    {
+        return;
+    }
+
+    float2 Pixel = float2(ThreadId.xy);
+    float2 UV = (Pixel + 0.5f) / OutputSize;
+    float4 RGBA = SourceTexture.SampleLevel(SourceSampler, UV, 0);
+
+    float3 RGB = ApplyGamma(RGBA.rgb, bLinearInput);
+    float Alpha = RGBA.a;
+
+    float3 Saturated = saturate(RGB);
+    float A = saturate(Alpha);
+
+    uint3 QuantRGB = (uint3)round(Saturated * 255.0f);
+    uint QuantA = (uint)round(A * 255.0f);
+
+    uint Packed = (QuantA << 24) | (QuantRGB.r << 16) | (QuantRGB.g << 8) | QuantRGB.b;
+    OutBGRA[ThreadId.xy] = Packed;
+}

@@ -1,0 +1,156 @@
+#include "/Engine/Private/Common.ush"
+
+RWTexture2D<float4> OutputTexture;
+Texture2DArray<float4> LeftFaces;
+Texture2DArray<float4> RightFaces;
+SamplerState FaceSampler;
+
+cbuffer FOmniEquirectParameters
+{
+    float2 OutputResolution;
+    int FaceResolution;
+    int bStereo;
+    float SeamStrength;
+    float PolarStrength;
+    int StereoLayout;
+    int bHalfSphere;
+    float Padding;
+    float LongitudeSpan;
+    float LatitudeSpan;
+};
+
+float3 DirectionFromEquirect(uint2 Pixel, float2 EyeRes, out float Latitude)
+{
+    float2 UV = (float2(Pixel) + 0.5f) / EyeRes;
+    float Longitude = (UV.x * 2.0f - 1.0f) * LongitudeSpan;
+    Latitude = (0.5f - UV.y) * LatitudeSpan * 2.0f;
+
+    float CosLat = cos(Latitude);
+    float SinLat = sin(Latitude);
+    float CosLon = cos(Longitude);
+    float SinLon = sin(Longitude);
+
+    float3 Dir;
+    Dir.x = CosLat * CosLon;
+    Dir.y = SinLat;
+    Dir.z = CosLat * SinLon;
+    return normalize(Dir);
+}
+
+void DirectionToFaceUV(float3 Direction, out uint FaceIndex, out float2 FaceUV)
+{
+    float3 AbsDir = abs(Direction);
+
+    if (AbsDir.x >= AbsDir.y && AbsDir.x >= AbsDir.z)
+    {
+        if (Direction.x > 0.0f)
+        {
+            FaceIndex = 0; // +X
+            FaceUV = float2(-Direction.z, Direction.y) / AbsDir.x;
+        }
+        else
+        {
+            FaceIndex = 1; // -X
+            FaceUV = float2(Direction.z, Direction.y) / AbsDir.x;
+        }
+    }
+    else if (AbsDir.y >= AbsDir.x && AbsDir.y >= AbsDir.z)
+    {
+        if (Direction.y > 0.0f)
+        {
+            FaceIndex = 2; // +Y
+            FaceUV = float2(Direction.x, -Direction.z) / AbsDir.y;
+        }
+        else
+        {
+            FaceIndex = 3; // -Y
+            FaceUV = float2(Direction.x, Direction.z) / AbsDir.y;
+        }
+    }
+    else
+    {
+        if (Direction.z > 0.0f)
+        {
+            FaceIndex = 4; // +Z
+            FaceUV = float2(Direction.x, Direction.y) / AbsDir.z;
+        }
+        else
+        {
+            FaceIndex = 5; // -Z
+            FaceUV = float2(-Direction.x, Direction.y) / AbsDir.z;
+        }
+    }
+
+    FaceUV = (FaceUV + 1.0f) * 0.5f;
+
+    float Resolution = float(FaceResolution);
+    float Scale = lerp(1.0f, (Resolution - 1.0f) / Resolution, SeamStrength);
+    float Bias = (0.5f / Resolution) * SeamStrength;
+    FaceUV = FaceUV * Scale + Bias;
+    FaceUV = saturate(FaceUV);
+}
+
+float4 SampleCubemap(Texture2DArray<float4> Faces, float3 Direction)
+{
+    uint FaceIndex;
+    float2 FaceUV;
+    DirectionToFaceUV(Direction, FaceIndex, FaceUV);
+
+    return Faces.SampleLevel(FaceSampler, float3(FaceUV, FaceIndex), 0.0f);
+}
+
+[numthreads(8, 8, 1)]
+void MainCS(uint3 DispatchThreadID : SV_DispatchThreadID)
+{
+    if (DispatchThreadID.x >= uint(OutputResolution.x) || DispatchThreadID.y >= uint(OutputResolution.y))
+    {
+        return;
+    }
+
+    bool bUseStereo = (bStereo != 0);
+    uint2 EyePixel = DispatchThreadID.xy;
+    float2 EyeRes = float2(OutputResolution.x, OutputResolution.y);
+    bool bRightEye = false;
+
+    if (bUseStereo)
+    {
+        if (StereoLayout == 0)
+        {
+            uint EyeHeight = uint(OutputResolution.y * 0.5f);
+            EyePixel.y = DispatchThreadID.y % EyeHeight;
+            bRightEye = DispatchThreadID.y >= EyeHeight;
+            EyeRes = float2(OutputResolution.x, float(EyeHeight));
+        }
+        else
+        {
+            uint EyeWidth = uint(OutputResolution.x * 0.5f);
+            EyePixel.x = DispatchThreadID.x % EyeWidth;
+            bRightEye = DispatchThreadID.x >= EyeWidth;
+            EyeRes = float2(float(EyeWidth), OutputResolution.y);
+        }
+    }
+
+    float Latitude = 0.0f;
+    float3 Direction = DirectionFromEquirect(EyePixel, EyeRes, Latitude);
+
+    if (PolarStrength > 0.0f)
+    {
+        float PoleFactor = saturate(abs(Latitude) / (PI * 0.5f));
+        PoleFactor = pow(PoleFactor, 4.0f);
+        float Blend = PoleFactor * PolarStrength;
+        if (Blend > 0.0f)
+        {
+            float3 PoleVector = float3(0.0f, Latitude >= 0.0f ? 1.0f : -1.0f, 0.0f);
+            Direction = normalize(lerp(Direction, PoleVector, Blend));
+        }
+    }
+
+    if (bHalfSphere != 0 && Direction.x < 0.0f)
+    {
+        OutputTexture[DispatchThreadID.xy] = float4(0.0f, 0.0f, 0.0f, 0.0f);
+        return;
+    }
+
+    float4 Color = SampleCubemap(bRightEye ? RightFaces : LeftFaces, Direction);
+    OutputTexture[DispatchThreadID.xy] = Color;
+}
