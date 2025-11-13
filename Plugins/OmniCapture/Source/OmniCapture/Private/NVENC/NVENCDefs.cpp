@@ -79,10 +79,18 @@ namespace OmniNVENC
         switch (Codec)
         {
         case ENVENCCodec::HEVC:
-            return GuidFromComponents(0x790CDC88, 0x45224D7B, 0x9425BDA9, 0x975F7603);
+        {
+            // GUID values mirror the definitions in Video Codec SDK 12.2's nvEncodeAPI.h
+            static const FGuid HevcGuid(0x790CDC88, 0x45224D7B, 0x9425BDA9, 0x975F7603);
+            return HevcGuid;
+        }
         case ENVENCCodec::H264:
         default:
-            return GuidFromComponents(0x6BC82762, 0x4E634CA4, 0xAA851E50, 0xF321F6BF);
+        {
+            // GUID values mirror the definitions in Video Codec SDK 12.2's nvEncodeAPI.h
+            static const FGuid H264Guid(0x6BC82762, 0x4E634CA4, 0xAA851E50, 0xF321F6BF);
+            return H264Guid;
+        }
         }
 #endif
     }
