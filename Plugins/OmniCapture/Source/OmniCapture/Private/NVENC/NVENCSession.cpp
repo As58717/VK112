@@ -154,6 +154,37 @@ namespace OmniNVENC
             }
         }
 
+        NV_ENC_BIT_DEPTH ToNVBitDepth(NV_ENC_BUFFER_FORMAT Format)
+        {
+            switch (Format)
+            {
+            case NV_ENC_BUFFER_FORMAT_YUV420_10BIT:
+#if defined(NV_ENC_BUFFER_FORMAT_YUV444_10BIT)
+            case NV_ENC_BUFFER_FORMAT_YUV444_10BIT:
+#endif
+                return NV_ENC_BIT_DEPTH_10;
+            default:
+                return NV_ENC_BIT_DEPTH_8;
+            }
+        }
+
+        uint32 GetChromaFormatIDC(NV_ENC_BUFFER_FORMAT Format)
+        {
+            switch (Format)
+            {
+            case NV_ENC_BUFFER_FORMAT_ARGB:
+#if defined(NV_ENC_BUFFER_FORMAT_ABGR)
+            case NV_ENC_BUFFER_FORMAT_ABGR:
+#endif
+#if defined(NV_ENC_BUFFER_FORMAT_ARGB10)
+            case NV_ENC_BUFFER_FORMAT_ARGB10:
+#endif
+                return 3u;
+            default:
+                return 1u;
+            }
+        }
+
         NV_ENC_PARAMS_RC_MODE ToNVRateControl(ENVENCRateControlMode Mode)
         {
             switch (Mode)
@@ -829,6 +860,22 @@ bool FNVENCSession::Open(ENVENCCodec Codec, void* InDevice, NV_ENC_DEVICE_TYPE I
             UE_LOG(LogNVENCSession, Warning,
                 TEXT("NVENC session switching H.264 input format to NV12 8-bit 4:2:0 for compatibility."));
             NvBufferFormat = NV_ENC_BUFFER_FORMAT_NV12;
+        }
+
+        const NV_ENC_BIT_DEPTH NvBitDepth = ToNVBitDepth(NvBufferFormat);
+        const uint32 NvChromaFormat = GetChromaFormatIDC(NvBufferFormat);
+
+        if (Parameters.Codec == ENVENCCodec::H264)
+        {
+            EncodeConfig.encodeCodecConfig.h264Config.chromaFormatIDC = NvChromaFormat;
+            EncodeConfig.encodeCodecConfig.h264Config.inputBitDepth = NvBitDepth;
+            EncodeConfig.encodeCodecConfig.h264Config.outputBitDepth = NvBitDepth;
+        }
+        else
+        {
+            EncodeConfig.encodeCodecConfig.hevcConfig.chromaFormatIDC = NvChromaFormat;
+            EncodeConfig.encodeCodecConfig.hevcConfig.inputBitDepth = NvBitDepth;
+            EncodeConfig.encodeCodecConfig.hevcConfig.outputBitDepth = NvBitDepth;
         }
 
         InitializeParams = {};
