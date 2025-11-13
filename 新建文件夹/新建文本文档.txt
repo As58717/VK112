@@ -1,0 +1,25 @@
+04:32:38 (+0.00s) Attempt 1 · BeginCapture Capture request received (Attempt #1).
+04:32:38 (+0.00s) Attempt 1 · ValidateEnvironment Validating capture environment.
+04:32:38 (+0.00s) Attempt 1 · ValidateEnvironment Warning active: GPU: NVIDIA GeForce RTX 4060 Ti
+04:32:38 (+0.00s) Attempt 1 · ValidateEnvironment Warning active: Adapter: NVIDIA GeForce RTX 4060 Ti
+04:32:38 (+0.00s) Attempt 1 · ValidateEnvironment Warning active: Driver: 566.36
+04:32:38 (+0.00s) Attempt 1 · ValidateEnvironment Warning active: HEVC codec unsupported: NvEncInitializeEncoder failed: NV_ENC_ERR_INVALID_PARAM (Codec=HEVC, Preset=NV_ENC_PRESET_DEFAULT, Profile=NV_ENC_HEVC_PROFILE_MAIN, Level=NV_ENC_LEVEL_AUTOSELECT, API runtime=12.2 (0x0200000c), API build=12.2 (0x0200000c))
+04:32:38 (+0.00s) Attempt 1 · ValidateEnvironment Warning active: NV12 NVENC path unsupported by this engine build
+04:32:38 (+0.00s) Attempt 1 · ValidateEnvironment Warning active: HEVC unsupported (NvEncInitializeEncoder failed: NV_ENC_ERR_INVALID_PARAM (Codec=HEVC, Preset=NV_ENC_PRESET_DEFAULT, Profile=NV_ENC_HEVC_PROFILE_MAIN, Level=NV_ENC_LEVEL_AUTOSELECT, API runtime=12.2 (0x0200000c), API build=12.2 (0x0200000c))) - falling back to H.264
+04:32:38 (+0.00s) Attempt 1 · ValidateEnvironment Environment validation completed.
+04:32:38 (+0.00s) Attempt 1 · ValidateEnvironment Capture environment warnings: GPU: NVIDIA GeForce RTX 4060 Ti; Adapter: NVIDIA GeForce RTX 4060 Ti; Driver: 566.36; HEVC codec unsupported: NvEncInitializeEncoder failed: NV_ENC_ERR_INVALID_PARAM (Codec=HEVC, Preset=NV_ENC_PRESET_DEFAULT, Profile=NV_ENC_HEVC_PROFILE_MAIN, Level=NV_ENC_LEVEL_AUTOSELECT, API runtime=12.2 (0x0200000c), API build=12.2 (0x0200000c)); NV12 NVENC path unsupported by this engine build; HEVC unsupported (NvEncInitializeEncoder failed: NV_ENC_ERR_INVALID_PARAM (Codec=HEVC, Preset=NV_ENC_PRESET_DEFAULT, Profile=NV_ENC_HEVC_PROFILE_MAIN, Level=NV_ENC_LEVEL_AUTOSELECT, API runtime=12.2 (0x0200000c), API build=12.2 (0x0200000c))) - falling back to H.264
+04:32:38 (+0.00s) Attempt 1 · CreateRig Spawning capture rig.
+04:32:38 (+0.00s) Attempt 1 · CreateTickActor Spawning capture tick actor.
+04:32:38 (+0.00s) Attempt 1 · InitializeOutputs Initializing output writers.
+04:32:38 (+0.00s) Attempt 1 · InitializeOutputs NVENC output will be written to Y:/Segment_00/OmniCapture.h264
+04:32:38 (+0.00s) Attempt 1 · InitializeOutputs Image sequence writer initialized for NVENC fallback.
+04:32:38 (+0.00s) Attempt 1 · Audio Initializing audio recording.
+04:32:38 (+0.00s) Attempt 1 · Audio Audio recorder started.
+04:32:38 (+0.00s) Attempt 1 · BeginCapture Attempt #1 -> Begin capture Mono 360 (1920x1920 -> 3840x1920, Equirect Mono) (NVENC, sRGB, H.264) -> Y:/Segment_00
+04:32:38 (+0.00s) Attempt 1 · CaptureLoop Capture pipeline initialized.
+04:34:16 (+97.32s) Attempt 1 · EndCapture Attempt #1 -> End capture (Finalize=1)
+04:34:16 (+97.33s) Attempt 1 · Audio Audio recording saved to Y:/Segment_00/OmniCapture.wav
+04:34:16 (+97.33s) Attempt 1 · FinalizeOutputs Finalize outputs requested (Finalize=true).
+04:34:16 (+97.33s) Attempt 1 · FinalizeOutputs FinalizeOutputs called with no captured frames
+04:34:16 (+97.33s) Attempt 1 · Attempt 1 Summary Capture attempt #1 completed after 97.75s. Frames captured: 0. Dropped frames: 0. No finalized output was generated.
+04:34:16 (+97.33s) Attempt 1 · Idle Capture session ended.

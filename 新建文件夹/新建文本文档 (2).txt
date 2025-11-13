@@ -1,0 +1,93 @@
+04:35:31 (+0.00s) Attempt 2 · BeginCapture Capture request received (Attempt #2).
+04:35:31 (+0.00s) Attempt 2 · ValidateEnvironment Validating capture environment.
+04:35:31 (+0.00s) Attempt 2 · ValidateEnvironment Warning active: GPU: NVIDIA GeForce RTX 4060 Ti
+04:35:31 (+0.00s) Attempt 2 · ValidateEnvironment Warning active: Adapter: NVIDIA GeForce RTX 4060 Ti
+04:35:31 (+0.00s) Attempt 2 · ValidateEnvironment Warning active: Driver: 566.36
+04:35:31 (+0.00s) Attempt 2 · ValidateEnvironment Warning active: NV12 NVENC path unsupported by this engine build
+04:35:31 (+0.00s) Attempt 2 · ValidateEnvironment Environment validation completed.
+04:35:31 (+0.00s) Attempt 2 · ValidateEnvironment Capture environment warnings: GPU: NVIDIA GeForce RTX 4060 Ti; Adapter: NVIDIA GeForce RTX 4060 Ti; Driver: 566.36; NV12 NVENC path unsupported by this engine build
+04:35:31 (+0.00s) Attempt 2 · CreateRig Spawning capture rig.
+04:35:31 (+0.00s) Attempt 2 · CreateTickActor Spawning capture tick actor.
+04:35:31 (+0.00s) Attempt 2 · InitializeOutputs Initializing output writers.
+04:35:31 (+0.00s) Attempt 2 · InitializeOutputs NVENC output will be written to Y:/Segment_00/OmniCapture.h264
+04:35:31 (+0.00s) Attempt 2 · InitializeOutputs Image sequence writer initialized for NVENC fallback.
+04:35:31 (+0.00s) Attempt 2 · Audio Initializing audio recording.
+04:35:31 (+0.00s) Attempt 2 · Audio Audio recorder started.
+04:35:31 (+0.00s) Attempt 2 · BeginCapture Attempt #2 -> Begin capture Mono 360 (1920x1920 -> 3840x1920, Equirect Mono) (NVENC, sRGB, H.264) -> Y:/Segment_00
+04:35:31 (+0.00s) Attempt 2 · CaptureLoop Capture pipeline initialized.
+04:36:37 (+65.15s) Attempt 2 · CaptureLoop Warning active: Frame drops detected - rendering slower than encode path
+04:36:37 (+65.15s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:36:38 (+66.68s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:36:40 (+68.27s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:36:41 (+69.77s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:36:43 (+71.28s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:36:44 (+72.76s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:36:46 (+74.27s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:36:47 (+75.76s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:36:49 (+77.33s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:36:50 (+78.84s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:36:52 (+80.36s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:36:53 (+81.87s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:36:55 (+83.36s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:36:56 (+84.84s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:36:58 (+86.36s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:36:59 (+87.86s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:37:01 (+89.34s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:37:02 (+90.84s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:37:04 (+92.36s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:37:05 (+93.88s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:37:07 (+95.40s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:37:08 (+96.87s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:37:10 (+98.36s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:37:11 (+99.83s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:37:13 (+101.30s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:37:14 (+102.80s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:37:16 (+104.32s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:37:17 (+105.83s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:37:19 (+107.34s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:37:20 (+108.83s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:37:22 (+110.33s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:37:23 (+111.81s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:37:25 (+113.31s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:37:26 (+114.82s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:37:28 (+116.33s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:37:29 (+117.82s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:37:31 (+119.35s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:37:32 (+120.82s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:37:34 (+122.31s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:37:35 (+123.79s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:37:37 (+125.27s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:37:38 (+126.76s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:37:40 (+128.28s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:37:41 (+129.79s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:37:43 (+131.30s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:37:44 (+132.79s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:37:46 (+134.31s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:37:47 (+135.76s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:37:49 (+137.26s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:37:50 (+138.75s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:37:52 (+140.22s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:37:53 (+141.71s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:37:55 (+143.23s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:37:56 (+144.74s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:37:58 (+146.26s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:37:59 (+147.75s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:38:01 (+149.25s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:38:02 (+150.75s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:38:04 (+152.23s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:38:05 (+153.69s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:38:07 (+155.21s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:38:08 (+156.71s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:38:10 (+158.24s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:38:11 (+159.72s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:38:13 (+161.21s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:38:14 (+162.70s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:38:16 (+164.19s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:38:17 (+165.64s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:38:19 (+167.16s) Attempt 2 · CaptureLoop OmniCapture frame dropped
+04:38:19 (+167.59s) Attempt 2 · EndCapture Attempt #2 -> End capture (Finalize=1)
+04:38:19 (+167.59s) Attempt 2 · Audio Audio recording saved to Y:/Segment_00/OmniCapture.wav
+04:38:19 (+167.59s) Attempt 2 · FinalizeOutputs Finalize outputs requested (Finalize=true).
+04:38:19 (+167.59s) Attempt 2 · FinalizeOutputs FinalizeOutputs called with no captured frames
+04:38:19 (+167.59s) Attempt 2 · Attempt 2 Summary Capture attempt #2 completed after 168.01s. Frames captured: 0. Dropped frames: 69. No finalized output was generated.
+04:38:19 (+167.59s) Attempt 2 · Idle Capture session ended.
