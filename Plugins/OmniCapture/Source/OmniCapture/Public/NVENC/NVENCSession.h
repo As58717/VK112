@@ -30,6 +30,8 @@ namespace OmniNVENC
 
         bool Open(ENVENCCodec Codec, void* InDevice = nullptr, NV_ENC_DEVICE_TYPE InDeviceType = NV_ENC_DEVICE_TYPE_DIRECTX);
         bool Initialize(const FNVENCParameters& Parameters);
+        void SetLogContext(const FString& InContext);
+        const TCHAR* GetLogContextLabel() const;
         bool ValidatePresetConfiguration(ENVENCCodec Codec, bool bAllowNullFallback = true);
         bool Reconfigure(const FNVENCParameters& Parameters);
         void Flush();
@@ -65,6 +67,7 @@ namespace OmniNVENC
         NV_ENC_BUFFER_FORMAT NvBufferFormat = NV_ENC_BUFFER_FORMAT_UNDEFINED;
         uint32 ApiVersion = NVENCAPI_VERSION;
         FString LastErrorMessage;
+        FString LogContext = TEXT("NVENC session");
     };
 }
 
