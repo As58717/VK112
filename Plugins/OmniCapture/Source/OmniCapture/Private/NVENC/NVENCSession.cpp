@@ -564,8 +564,6 @@ bool FNVENCSession::Open(ENVENCCodec Codec, void* InDevice, NV_ENC_DEVICE_TYPE I
             ValidationPresets.Add({ InGuid, PreferredTuning, FriendlyName });
         };
 
-        AddValidationPreset(ToWindowsGuid(FNVENCDefs::PresetDefaultGuid()), NV_ENC_TUNING_INFO_UNDEFINED, TEXT("NV_ENC_PRESET_DEFAULT"));
-        AddValidationPreset(ToWindowsGuid(FNVENCDefs::PresetLowLatencyHighQualityGuid()), NV_ENC_TUNING_INFO_LOW_LATENCY, TEXT("NV_ENC_PRESET_LOW_LATENCY_HQ"));
         AddValidationPreset(ToWindowsGuid(FNVENCDefs::PresetP1Guid()), NV_ENC_TUNING_INFO_LOW_LATENCY, TEXT("NV_ENC_PRESET_P1"));
         AddValidationPreset(ToWindowsGuid(FNVENCDefs::PresetP2Guid()), NV_ENC_TUNING_INFO_LOW_LATENCY, TEXT("NV_ENC_PRESET_P2"));
         AddValidationPreset(ToWindowsGuid(FNVENCDefs::PresetP3Guid()), NV_ENC_TUNING_INFO_HIGH_QUALITY, TEXT("NV_ENC_PRESET_P3"));
@@ -573,6 +571,8 @@ bool FNVENCSession::Open(ENVENCCodec Codec, void* InDevice, NV_ENC_DEVICE_TYPE I
         AddValidationPreset(ToWindowsGuid(FNVENCDefs::PresetP5Guid()), NV_ENC_TUNING_INFO_HIGH_QUALITY, TEXT("NV_ENC_PRESET_P5"));
         AddValidationPreset(ToWindowsGuid(FNVENCDefs::PresetP6Guid()), NV_ENC_TUNING_INFO_HIGH_QUALITY, TEXT("NV_ENC_PRESET_P6"));
         AddValidationPreset(ToWindowsGuid(FNVENCDefs::PresetP7Guid()), NV_ENC_TUNING_INFO_LOSSLESS, TEXT("NV_ENC_PRESET_P7"));
+        AddValidationPreset(ToWindowsGuid(FNVENCDefs::PresetDefaultGuid()), NV_ENC_TUNING_INFO_UNDEFINED, TEXT("NV_ENC_PRESET_DEFAULT"));
+        AddValidationPreset(ToWindowsGuid(FNVENCDefs::PresetLowLatencyHighQualityGuid()), NV_ENC_TUNING_INFO_LOW_LATENCY, TEXT("NV_ENC_PRESET_LOW_LATENCY_HQ"));
 
         auto QueryPreset = [&](void* InEncoderHandle, const GUID& InPresetGuid, NV_ENC_TUNING_INFO PreferredTuning, NV_ENC_PRESET_CONFIG& OutPresetConfig) -> NVENCSTATUS
         {
@@ -753,8 +753,6 @@ bool FNVENCSession::Open(ENVENCCodec Codec, void* InDevice, NV_ENC_DEVICE_TYPE I
             PresetCandidates.Add(Candidate);
         };
 
-        AddCandidate(ToWindowsGuid(FNVENCDefs::PresetDefaultGuid()), NV_ENC_TUNING_INFO_UNDEFINED, TEXT("NV_ENC_PRESET_DEFAULT"));
-        AddCandidate(ToWindowsGuid(FNVENCDefs::PresetLowLatencyHighQualityGuid()), NV_ENC_TUNING_INFO_LOW_LATENCY, TEXT("NV_ENC_PRESET_LOW_LATENCY_HQ"));
         AddCandidate(ToWindowsGuid(FNVENCDefs::PresetP1Guid()), NV_ENC_TUNING_INFO_LOW_LATENCY, TEXT("NV_ENC_PRESET_P1"));
         AddCandidate(ToWindowsGuid(FNVENCDefs::PresetP2Guid()), NV_ENC_TUNING_INFO_LOW_LATENCY, TEXT("NV_ENC_PRESET_P2"));
         AddCandidate(ToWindowsGuid(FNVENCDefs::PresetP3Guid()), NV_ENC_TUNING_INFO_HIGH_QUALITY, TEXT("NV_ENC_PRESET_P3"));
@@ -762,6 +760,8 @@ bool FNVENCSession::Open(ENVENCCodec Codec, void* InDevice, NV_ENC_DEVICE_TYPE I
         AddCandidate(ToWindowsGuid(FNVENCDefs::PresetP5Guid()), NV_ENC_TUNING_INFO_HIGH_QUALITY, TEXT("NV_ENC_PRESET_P5"));
         AddCandidate(ToWindowsGuid(FNVENCDefs::PresetP6Guid()), NV_ENC_TUNING_INFO_HIGH_QUALITY, TEXT("NV_ENC_PRESET_P6"));
         AddCandidate(ToWindowsGuid(FNVENCDefs::PresetP7Guid()), NV_ENC_TUNING_INFO_LOSSLESS, TEXT("NV_ENC_PRESET_P7"));
+        AddCandidate(ToWindowsGuid(FNVENCDefs::PresetDefaultGuid()), NV_ENC_TUNING_INFO_UNDEFINED, TEXT("NV_ENC_PRESET_DEFAULT"));
+        AddCandidate(ToWindowsGuid(FNVENCDefs::PresetLowLatencyHighQualityGuid()), NV_ENC_TUNING_INFO_LOW_LATENCY, TEXT("NV_ENC_PRESET_LOW_LATENCY_HQ"));
 
         const ENVENCPreset RequestedPreset = Parameters.RequestedPreset;
         const ENVENCTuningMode RequestedTuningMode = Parameters.RequestedTuning;
@@ -979,10 +979,12 @@ bool FNVENCSession::Open(ENVENCCodec Codec, void* InDevice, NV_ENC_DEVICE_TYPE I
             NvBufferFormat = NV_ENC_BUFFER_FORMAT_NV12;
             EffectiveBufferFormat = ENVENCBufferFormat::NV12;
         }
-        else if (Parameters.Codec == ENVENCCodec::HEVC && EffectiveBufferFormat == ENVENCBufferFormat::BGRA)
+        else if (Parameters.Codec == ENVENCCodec::HEVC && EffectiveBufferFormat != ENVENCBufferFormat::NV12)
         {
+            const FString OriginalFormat = FNVENCDefs::BufferFormatToString(EffectiveBufferFormat);
             UE_LOG(LogNVENCSession, Warning,
-                TEXT("NVENC session switching HEVC input format to NV12 8-bit 4:2:0 for compatibility."));
+                TEXT("NVENC session switching HEVC input format %s to NV12 8-bit 4:2:0 for compatibility."),
+                *OriginalFormat);
             NvBufferFormat = NV_ENC_BUFFER_FORMAT_NV12;
             EffectiveBufferFormat = ENVENCBufferFormat::NV12;
         }
