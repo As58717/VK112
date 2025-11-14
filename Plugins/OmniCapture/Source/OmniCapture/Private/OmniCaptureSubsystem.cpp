@@ -230,7 +230,23 @@ void UOmniCaptureSubsystem::RecordCaptureCompletion(bool bFinalizeOutputs)
     const double StartTime = ActiveAttemptStartTime > 0.0 ? ActiveAttemptStartTime : CaptureStartTime;
     const float DurationSeconds = StartTime > 0.0 ? static_cast<float>(Now - StartTime) : 0.0f;
 
-    const FString Outcome = bFinalizeOutputs ? TEXT("completed") : TEXT("stopped without finalization");
+    FString Outcome;
+    if (!bFinalizeOutputs)
+    {
+        Outcome = TEXT("stopped without finalization");
+    }
+    else if (FrameCounter == 0)
+    {
+        Outcome = TEXT("completed with no frames captured");
+    }
+    else if (bDroppedFrames || DroppedFrameCount > 0)
+    {
+        Outcome = TEXT("completed with dropped frames");
+    }
+    else
+    {
+        Outcome = TEXT("completed successfully");
+    }
 
     FString OutputDetail;
     if (bFinalizeOutputs)
