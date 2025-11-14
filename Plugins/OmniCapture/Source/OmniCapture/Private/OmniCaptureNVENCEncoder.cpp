@@ -263,6 +263,39 @@ namespace
         }
     }
 
+    ENVENCPreset ToPreset(EOmniCaptureNVENCPreset Preset)
+    {
+        switch (Preset)
+        {
+        case EOmniCaptureNVENCPreset::Default: return ENVENCPreset::Default;
+        case EOmniCaptureNVENCPreset::LowLatencyHighQuality: return ENVENCPreset::LowLatencyHighQuality;
+        case EOmniCaptureNVENCPreset::P1: return ENVENCPreset::P1;
+        case EOmniCaptureNVENCPreset::P2: return ENVENCPreset::P2;
+        case EOmniCaptureNVENCPreset::P3: return ENVENCPreset::P3;
+        case EOmniCaptureNVENCPreset::P4: return ENVENCPreset::P4;
+        case EOmniCaptureNVENCPreset::P5: return ENVENCPreset::P5;
+        case EOmniCaptureNVENCPreset::P6: return ENVENCPreset::P6;
+        case EOmniCaptureNVENCPreset::P7: return ENVENCPreset::P7;
+        case EOmniCaptureNVENCPreset::Automatic:
+        default:
+            return ENVENCPreset::Automatic;
+        }
+    }
+
+    ENVENCTuningMode ToTuning(EOmniCaptureNVENCTuning Tuning)
+    {
+        switch (Tuning)
+        {
+        case EOmniCaptureNVENCTuning::HighQuality: return ENVENCTuningMode::HighQuality;
+        case EOmniCaptureNVENCTuning::LowLatency: return ENVENCTuningMode::LowLatency;
+        case EOmniCaptureNVENCTuning::UltraLowLatency: return ENVENCTuningMode::UltraLowLatency;
+        case EOmniCaptureNVENCTuning::Lossless: return ENVENCTuningMode::Lossless;
+        case EOmniCaptureNVENCTuning::Automatic:
+        default:
+            return ENVENCTuningMode::Automatic;
+        }
+    }
+
 #if PLATFORM_WINDOWS && OMNI_WITH_D3D12_RHI
     bool CreateProbeD3D12Device(TRefCountPtr<ID3D12Device>& OutDevice, FString& OutFailureReason, FString* OutAdapterName = nullptr)
     {
@@ -953,6 +986,8 @@ void FOmniCaptureNVENCEncoder::Initialize(const FOmniCaptureSettings& Settings, 
     ActiveParameters.MaxBitrate = FMath::Max(Settings.Quality.MaxBitrateKbps * 1000, ActiveParameters.TargetBitrate);
     ActiveParameters.RateControlMode = ToRateControlMode(Settings.Quality.RateControlMode);
     ActiveParameters.MultipassMode = Settings.Quality.bLowLatency ? ENVENCMultipassMode::DISABLED : ENVENCMultipassMode::FULL;
+    ActiveParameters.RequestedPreset = ToPreset(Settings.Quality.NVENCPreset);
+    ActiveParameters.RequestedTuning = ToTuning(Settings.Quality.NVENCTuning);
     ActiveParameters.GOPLength = Settings.Quality.GOPLength;
     ActiveParameters.bEnableAdaptiveQuantization = Settings.Quality.RateControlMode != EOmniCaptureRateControlMode::Lossless;
     ActiveParameters.bEnableLookahead = !Settings.Quality.bLowLatency;

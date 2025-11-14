@@ -72,6 +72,52 @@ namespace
         }
     }
 
+    FText NVENCPresetToText(EOmniCaptureNVENCPreset Preset)
+    {
+        switch (Preset)
+        {
+        case EOmniCaptureNVENCPreset::Default: return LOCTEXT("NVENCPresetDefault", "Default");
+        case EOmniCaptureNVENCPreset::LowLatencyHighQuality: return LOCTEXT("NVENCPresetLowLatencyHQ", "Low Latency HQ");
+        case EOmniCaptureNVENCPreset::P1: return LOCTEXT("NVENCPresetP1", "Preset P1");
+        case EOmniCaptureNVENCPreset::P2: return LOCTEXT("NVENCPresetP2", "Preset P2");
+        case EOmniCaptureNVENCPreset::P3: return LOCTEXT("NVENCPresetP3", "Preset P3");
+        case EOmniCaptureNVENCPreset::P4: return LOCTEXT("NVENCPresetP4", "Preset P4");
+        case EOmniCaptureNVENCPreset::P5: return LOCTEXT("NVENCPresetP5", "Preset P5");
+        case EOmniCaptureNVENCPreset::P6: return LOCTEXT("NVENCPresetP6", "Preset P6");
+        case EOmniCaptureNVENCPreset::P7: return LOCTEXT("NVENCPresetP7", "Preset P7");
+        case EOmniCaptureNVENCPreset::Automatic:
+        default:
+            return LOCTEXT("NVENCPresetAutomatic", "Automatic");
+        }
+    }
+
+    FText NVENCTuningToText(EOmniCaptureNVENCTuning Tuning)
+    {
+        switch (Tuning)
+        {
+        case EOmniCaptureNVENCTuning::HighQuality: return LOCTEXT("NVENCTuningHQ", "High Quality");
+        case EOmniCaptureNVENCTuning::LowLatency: return LOCTEXT("NVENCTuningLL", "Low Latency");
+        case EOmniCaptureNVENCTuning::UltraLowLatency: return LOCTEXT("NVENCTuningULL", "Ultra Low Latency");
+        case EOmniCaptureNVENCTuning::Lossless: return LOCTEXT("NVENCTuningLossless", "Lossless");
+        case EOmniCaptureNVENCTuning::Automatic:
+        default:
+            return LOCTEXT("NVENCTuningAutomatic", "Automatic");
+        }
+    }
+
+    FText DiagnosticVerbosityToText(EOmniCaptureLogVerbosity Level)
+    {
+        switch (Level)
+        {
+        case EOmniCaptureLogVerbosity::ErrorsOnly: return LOCTEXT("DiagnosticVerbosityErrors", "Errors Only");
+        case EOmniCaptureLogVerbosity::WarningsAndErrors: return LOCTEXT("DiagnosticVerbosityWarnings", "Warnings + Errors");
+        case EOmniCaptureLogVerbosity::Verbose: return LOCTEXT("DiagnosticVerbosityVerbose", "Verbose");
+        case EOmniCaptureLogVerbosity::Info:
+        default:
+            return LOCTEXT("DiagnosticVerbosityInfo", "Info");
+        }
+    }
+
     FText OutputFormatToText(EOmniOutputFormat Format)
     {
         switch (Format)
@@ -259,6 +305,25 @@ void SOmniCaptureControlPanel::Construct(const FArguments& InArgs)
     ColorFormatOptions.Add(MakeShared<TEnumOptionValue<EOmniCaptureColorFormat>>(EOmniCaptureColorFormat::P010));
     ColorFormatOptions.Add(MakeShared<TEnumOptionValue<EOmniCaptureColorFormat>>(EOmniCaptureColorFormat::BGRA));
 
+    NVENCPresetOptions.Reset();
+    NVENCPresetOptions.Add(MakeShared<TEnumOptionValue<EOmniCaptureNVENCPreset>>(EOmniCaptureNVENCPreset::Automatic));
+    NVENCPresetOptions.Add(MakeShared<TEnumOptionValue<EOmniCaptureNVENCPreset>>(EOmniCaptureNVENCPreset::Default));
+    NVENCPresetOptions.Add(MakeShared<TEnumOptionValue<EOmniCaptureNVENCPreset>>(EOmniCaptureNVENCPreset::LowLatencyHighQuality));
+    NVENCPresetOptions.Add(MakeShared<TEnumOptionValue<EOmniCaptureNVENCPreset>>(EOmniCaptureNVENCPreset::P1));
+    NVENCPresetOptions.Add(MakeShared<TEnumOptionValue<EOmniCaptureNVENCPreset>>(EOmniCaptureNVENCPreset::P2));
+    NVENCPresetOptions.Add(MakeShared<TEnumOptionValue<EOmniCaptureNVENCPreset>>(EOmniCaptureNVENCPreset::P3));
+    NVENCPresetOptions.Add(MakeShared<TEnumOptionValue<EOmniCaptureNVENCPreset>>(EOmniCaptureNVENCPreset::P4));
+    NVENCPresetOptions.Add(MakeShared<TEnumOptionValue<EOmniCaptureNVENCPreset>>(EOmniCaptureNVENCPreset::P5));
+    NVENCPresetOptions.Add(MakeShared<TEnumOptionValue<EOmniCaptureNVENCPreset>>(EOmniCaptureNVENCPreset::P6));
+    NVENCPresetOptions.Add(MakeShared<TEnumOptionValue<EOmniCaptureNVENCPreset>>(EOmniCaptureNVENCPreset::P7));
+
+    NVENCTuningOptions.Reset();
+    NVENCTuningOptions.Add(MakeShared<TEnumOptionValue<EOmniCaptureNVENCTuning>>(EOmniCaptureNVENCTuning::Automatic));
+    NVENCTuningOptions.Add(MakeShared<TEnumOptionValue<EOmniCaptureNVENCTuning>>(EOmniCaptureNVENCTuning::HighQuality));
+    NVENCTuningOptions.Add(MakeShared<TEnumOptionValue<EOmniCaptureNVENCTuning>>(EOmniCaptureNVENCTuning::LowLatency));
+    NVENCTuningOptions.Add(MakeShared<TEnumOptionValue<EOmniCaptureNVENCTuning>>(EOmniCaptureNVENCTuning::UltraLowLatency));
+    NVENCTuningOptions.Add(MakeShared<TEnumOptionValue<EOmniCaptureNVENCTuning>>(EOmniCaptureNVENCTuning::Lossless));
+
     ProjectionOptions.Reset();
     ProjectionOptions.Add(MakeShared<TEnumOptionValue<EOmniCaptureProjection>>(EOmniCaptureProjection::Equirectangular));
     ProjectionOptions.Add(MakeShared<TEnumOptionValue<EOmniCaptureProjection>>(EOmniCaptureProjection::Fisheye));
@@ -285,6 +350,12 @@ void SOmniCaptureControlPanel::Construct(const FArguments& InArgs)
     OutputDirectoryModeOptions.Reset();
     OutputDirectoryModeOptions.Add(MakeShared<TEnumOptionValue<EOutputDirectoryMode>>(EOutputDirectoryMode::ProjectDefault));
     OutputDirectoryModeOptions.Add(MakeShared<TEnumOptionValue<EOutputDirectoryMode>>(EOutputDirectoryMode::Custom));
+
+    DiagnosticVerbosityOptions.Reset();
+    DiagnosticVerbosityOptions.Add(MakeShared<TEnumOptionValue<EOmniCaptureLogVerbosity>>(EOmniCaptureLogVerbosity::ErrorsOnly));
+    DiagnosticVerbosityOptions.Add(MakeShared<TEnumOptionValue<EOmniCaptureLogVerbosity>>(EOmniCaptureLogVerbosity::WarningsAndErrors));
+    DiagnosticVerbosityOptions.Add(MakeShared<TEnumOptionValue<EOmniCaptureLogVerbosity>>(EOmniCaptureLogVerbosity::Info));
+    DiagnosticVerbosityOptions.Add(MakeShared<TEnumOptionValue<EOmniCaptureLogVerbosity>>(EOmniCaptureLogVerbosity::Verbose));
 
     RefreshFeatureAvailability(true);
 
@@ -1102,9 +1173,107 @@ void SOmniCaptureControlPanel::Construct(const FArguments& InArgs)
             .VAlign(VAlign_Center)
             [
                 SNew(STextBlock)
-                .Text(LOCTEXT("TargetBitrateLabel", "Target Bitrate (kbps)"))
+                .Text(LOCTEXT("NVENCPresetLabel", "Preset"))
+                .Visibility_Lambda([this]()
+                {
+                    return IsNVENCOptionsVisible() ? EVisibility::Visible : EVisibility::Collapsed;
+                })
             ]
             + SGridPanel::Slot(1, 5)
+            [
+                SAssignNew(NVENCPresetCombo, SComboBox<TEnumOptionPtr<EOmniCaptureNVENCPreset>>)
+                .OptionsSource(&NVENCPresetOptions)
+                .IsEnabled_Lambda([this]()
+                {
+                    return IsNVENCControlsEnabled();
+                })
+                .OnGenerateWidget_Lambda([](TEnumOptionPtr<EOmniCaptureNVENCPreset> InItem)
+                {
+                    const EOmniCaptureNVENCPreset Value = InItem.IsValid() ? static_cast<EOmniCaptureNVENCPreset>(InItem->GetValue()) : EOmniCaptureNVENCPreset::Automatic;
+                    return SNew(STextBlock)
+                        .Text(NVENCPresetToText(Value));
+                })
+                .OnSelectionChanged(this, &SOmniCaptureControlPanel::HandleNVENCPresetChanged)
+                .Visibility_Lambda([this]()
+                {
+                    return IsNVENCOptionsVisible() ? EVisibility::Visible : EVisibility::Collapsed;
+                })
+                .ToolTipText_Lambda([this]()
+                {
+                    return GetNVENCPresetTooltip(GetSettingsSnapshot().Quality.NVENCPreset);
+                })
+                [
+                    SNew(STextBlock)
+                    .Text_Lambda([this]()
+                    {
+                        return NVENCPresetToText(GetSettingsSnapshot().Quality.NVENCPreset);
+                    })
+                    .ToolTipText_Lambda([this]()
+                    {
+                        return GetNVENCPresetTooltip(GetSettingsSnapshot().Quality.NVENCPreset);
+                    })
+                    .IsEnabled_Lambda([this]()
+                    {
+                        return IsNVENCControlsEnabled();
+                    })
+                ]
+            ]
+            + SGridPanel::Slot(0, 6)
+            .VAlign(VAlign_Center)
+            [
+                SNew(STextBlock)
+                .Text(LOCTEXT("NVENCTuningLabel", "Tuning"))
+                .Visibility_Lambda([this]()
+                {
+                    return IsNVENCOptionsVisible() ? EVisibility::Visible : EVisibility::Collapsed;
+                })
+            ]
+            + SGridPanel::Slot(1, 6)
+            [
+                SAssignNew(NVENCTuningCombo, SComboBox<TEnumOptionPtr<EOmniCaptureNVENCTuning>>)
+                .OptionsSource(&NVENCTuningOptions)
+                .IsEnabled_Lambda([this]()
+                {
+                    return IsNVENCControlsEnabled();
+                })
+                .OnGenerateWidget_Lambda([](TEnumOptionPtr<EOmniCaptureNVENCTuning> InItem)
+                {
+                    const EOmniCaptureNVENCTuning Value = InItem.IsValid() ? static_cast<EOmniCaptureNVENCTuning>(InItem->GetValue()) : EOmniCaptureNVENCTuning::Automatic;
+                    return SNew(STextBlock)
+                        .Text(NVENCTuningToText(Value));
+                })
+                .OnSelectionChanged(this, &SOmniCaptureControlPanel::HandleNVENCTuningChanged)
+                .Visibility_Lambda([this]()
+                {
+                    return IsNVENCOptionsVisible() ? EVisibility::Visible : EVisibility::Collapsed;
+                })
+                .ToolTipText_Lambda([this]()
+                {
+                    return GetNVENCTuningTooltip(GetSettingsSnapshot().Quality.NVENCTuning);
+                })
+                [
+                    SNew(STextBlock)
+                    .Text_Lambda([this]()
+                    {
+                        return NVENCTuningToText(GetSettingsSnapshot().Quality.NVENCTuning);
+                    })
+                    .ToolTipText_Lambda([this]()
+                    {
+                        return GetNVENCTuningTooltip(GetSettingsSnapshot().Quality.NVENCTuning);
+                    })
+                    .IsEnabled_Lambda([this]()
+                    {
+                        return IsNVENCControlsEnabled();
+                    })
+                ]
+            ]
+            + SGridPanel::Slot(0, 7)
+            .VAlign(VAlign_Center)
+            [
+                SNew(STextBlock)
+                .Text(LOCTEXT("TargetBitrateLabel", "Target Bitrate (kbps)"))
+            ]
+            + SGridPanel::Slot(1, 7)
             [
                 SNew(SSpinBox<int32>)
                 .MinValue(1000)
@@ -1113,13 +1282,13 @@ void SOmniCaptureControlPanel::Construct(const FArguments& InArgs)
                 .Value(this, &SOmniCaptureControlPanel::GetTargetBitrate)
                 .OnValueCommitted(this, &SOmniCaptureControlPanel::HandleTargetBitrateCommitted)
             ]
-            + SGridPanel::Slot(0, 6)
+            + SGridPanel::Slot(0, 8)
             .VAlign(VAlign_Center)
             [
                 SNew(STextBlock)
                 .Text(LOCTEXT("MaxBitrateLabel", "Max Bitrate (kbps)"))
             ]
-            + SGridPanel::Slot(1, 6)
+            + SGridPanel::Slot(1, 8)
             [
                 SNew(SSpinBox<int32>)
                 .MinValue(1000)
@@ -1128,13 +1297,13 @@ void SOmniCaptureControlPanel::Construct(const FArguments& InArgs)
                 .Value(this, &SOmniCaptureControlPanel::GetMaxBitrate)
                 .OnValueCommitted(this, &SOmniCaptureControlPanel::HandleMaxBitrateCommitted)
             ]
-            + SGridPanel::Slot(0, 7)
+            + SGridPanel::Slot(0, 9)
             .VAlign(VAlign_Center)
             [
                 SNew(STextBlock)
                 .Text(LOCTEXT("GOPLengthLabel", "GOP Length"))
             ]
-            + SGridPanel::Slot(1, 7)
+            + SGridPanel::Slot(1, 9)
             [
                 SNew(SSpinBox<int32>)
                 .MinValue(1)
@@ -1143,13 +1312,13 @@ void SOmniCaptureControlPanel::Construct(const FArguments& InArgs)
                 .Value(this, &SOmniCaptureControlPanel::GetGOPLength)
                 .OnValueCommitted(this, &SOmniCaptureControlPanel::HandleGOPCommitted)
             ]
-            + SGridPanel::Slot(0, 8)
+            + SGridPanel::Slot(0, 10)
             .VAlign(VAlign_Center)
             [
                 SNew(STextBlock)
                 .Text(LOCTEXT("BFramesLabel", "B-Frames"))
             ]
-            + SGridPanel::Slot(1, 8)
+            + SGridPanel::Slot(1, 10)
             [
                 SNew(SSpinBox<int32>)
                 .MinValue(0)
@@ -1486,6 +1655,48 @@ void SOmniCaptureControlPanel::Construct(const FArguments& InArgs)
                     .Text(LOCTEXT("ClearDiagnostics", "Clear Log"))
                     .OnClicked(this, &SOmniCaptureControlPanel::OnClearDiagnostics)
                     .IsEnabled(this, &SOmniCaptureControlPanel::CanClearDiagnostics)
+                ]
+            ]
+            + SVerticalBox::Slot()
+            .AutoHeight()
+            .Padding(0.f, 2.f, 0.f, 2.f)
+            [
+                SNew(SHorizontalBox)
+                + SHorizontalBox::Slot()
+                .AutoWidth()
+                .VAlign(VAlign_Center)
+                [
+                    SNew(STextBlock)
+                    .Text(LOCTEXT("DiagnosticVerbosityLabel", "Log Detail"))
+                ]
+                + SHorizontalBox::Slot()
+                .Padding(8.f, 0.f, 0.f, 0.f)
+                .AutoWidth()
+                [
+                    SAssignNew(DiagnosticVerbosityCombo, SComboBox<TEnumOptionPtr<EOmniCaptureLogVerbosity>>)
+                    .OptionsSource(&DiagnosticVerbosityOptions)
+                    .OnGenerateWidget_Lambda([](TEnumOptionPtr<EOmniCaptureLogVerbosity> InItem)
+                    {
+                        const EOmniCaptureLogVerbosity Value = InItem.IsValid() ? static_cast<EOmniCaptureLogVerbosity>(InItem->GetValue()) : EOmniCaptureLogVerbosity::Info;
+                        return SNew(STextBlock)
+                            .Text(DiagnosticVerbosityToText(Value));
+                    })
+                    .OnSelectionChanged(this, &SOmniCaptureControlPanel::HandleDiagnosticVerbosityChanged)
+                    .ToolTipText_Lambda([this]()
+                    {
+                        return GetDiagnosticVerbosityTooltip(GetSettingsSnapshot().DiagnosticVerbosity);
+                    })
+                    [
+                        SNew(STextBlock)
+                        .Text_Lambda([this]()
+                        {
+                            return DiagnosticVerbosityToText(GetSettingsSnapshot().DiagnosticVerbosity);
+                        })
+                        .ToolTipText_Lambda([this]()
+                        {
+                            return GetDiagnosticVerbosityTooltip(GetSettingsSnapshot().DiagnosticVerbosity);
+                        })
+                    ]
                 ]
             ]
             + SVerticalBox::Slot()
@@ -2455,12 +2666,15 @@ bool SOmniCaptureControlPanel::IsAnyComboBoxOpen() const
     return IsComboOpen(OutputFormatCombo)
         || IsComboOpen(CodecCombo)
         || IsComboOpen(ColorFormatCombo)
+        || IsComboOpen(NVENCPresetCombo)
+        || IsComboOpen(NVENCTuningCombo)
         || IsComboOpen(ProjectionCombo)
         || IsComboOpen(FisheyeTypeCombo)
         || IsComboOpen(StereoLayoutCombo)
         || IsComboOpen(ImageFormatCombo)
         || IsComboOpen(PNGBitDepthCombo)
-        || IsComboOpen(OutputDirectoryModeCombo);
+        || IsComboOpen(OutputDirectoryModeCombo)
+        || IsComboOpen(DiagnosticVerbosityCombo);
 }
 
 bool SOmniCaptureControlPanel::IsOutputFormatSelectable(EOmniOutputFormat Format) const
@@ -2591,6 +2805,99 @@ FText SOmniCaptureControlPanel::GetColorFormatTooltip(EOmniCaptureColorFormat Fo
         return FeatureAvailability.NVENCP010.bAvailable ? LOCTEXT("ColorFormatP010Tooltip", "10-bit P010 input for NVENC.") : FeatureAvailability.NVENCP010.Reason;
     default:
         return LOCTEXT("ColorFormatBGRATooltip", "BGRA fallback input for NVENC.");
+    }
+}
+
+bool SOmniCaptureControlPanel::IsNVENCOptionsVisible() const
+{
+    return GetSettingsSnapshot().OutputFormat == EOmniOutputFormat::NVENCHardware;
+}
+
+bool SOmniCaptureControlPanel::IsNVENCControlsEnabled() const
+{
+    return IsNVENCOptionsVisible() && FeatureAvailability.NVENC.bAvailable;
+}
+
+FText SOmniCaptureControlPanel::GetNVENCPresetTooltip(EOmniCaptureNVENCPreset Preset) const
+{
+    if (!IsNVENCOptionsVisible())
+    {
+        return LOCTEXT("NVENCPresetTooltipInactive", "Preset selection is available when NVENC output is enabled.");
+    }
+    if (!FeatureAvailability.NVENC.bAvailable)
+    {
+        return FeatureAvailability.NVENC.Reason;
+    }
+
+    switch (Preset)
+    {
+    case EOmniCaptureNVENCPreset::Automatic:
+        return LOCTEXT("NVENCPresetTooltipAutomatic", "Automatically choose a preset based on hardware support.");
+    case EOmniCaptureNVENCPreset::Default:
+        return LOCTEXT("NVENCPresetTooltipDefault", "NVENC default preset provided by the driver.");
+    case EOmniCaptureNVENCPreset::LowLatencyHighQuality:
+        return LOCTEXT("NVENCPresetTooltipLLHQ", "Legacy low-latency high-quality preset (maps to SDK fallback).");
+    case EOmniCaptureNVENCPreset::P1:
+        return LOCTEXT("NVENCPresetTooltipP1", "Preset P1 – fastest/lowest quality in the SDK P-series.");
+    case EOmniCaptureNVENCPreset::P2:
+        return LOCTEXT("NVENCPresetTooltipP2", "Preset P2 – low-latency oriented quality.");
+    case EOmniCaptureNVENCPreset::P3:
+        return LOCTEXT("NVENCPresetTooltipP3", "Preset P3 – balanced quality for most uses.");
+    case EOmniCaptureNVENCPreset::P4:
+        return LOCTEXT("NVENCPresetTooltipP4", "Preset P4 – high quality with moderate throughput cost.");
+    case EOmniCaptureNVENCPreset::P5:
+        return LOCTEXT("NVENCPresetTooltipP5", "Preset P5 – very high quality encoding.");
+    case EOmniCaptureNVENCPreset::P6:
+        return LOCTEXT("NVENCPresetTooltipP6", "Preset P6 – near visually lossless quality.");
+    case EOmniCaptureNVENCPreset::P7:
+        return LOCTEXT("NVENCPresetTooltipP7", "Preset P7 – lossless oriented preset.");
+    default:
+        return FText::GetEmpty();
+    }
+}
+
+FText SOmniCaptureControlPanel::GetNVENCTuningTooltip(EOmniCaptureNVENCTuning Tuning) const
+{
+    if (!IsNVENCOptionsVisible())
+    {
+        return LOCTEXT("NVENCTuningTooltipInactive", "Tuning overrides are available when NVENC output is enabled.");
+    }
+    if (!FeatureAvailability.NVENC.bAvailable)
+    {
+        return FeatureAvailability.NVENC.Reason;
+    }
+
+    switch (Tuning)
+    {
+    case EOmniCaptureNVENCTuning::Automatic:
+        return LOCTEXT("NVENCTuningTooltipAutomatic", "Let the encoder pick a tuning profile for the active preset.");
+    case EOmniCaptureNVENCTuning::HighQuality:
+        return LOCTEXT("NVENCTuningTooltipHQ", "Prioritize quality over encode speed.");
+    case EOmniCaptureNVENCTuning::LowLatency:
+        return LOCTEXT("NVENCTuningTooltipLL", "Reduce encode latency with minimal quality trade-off.");
+    case EOmniCaptureNVENCTuning::UltraLowLatency:
+        return LOCTEXT("NVENCTuningTooltipULL", "Minimize encode latency for live streaming scenarios.");
+    case EOmniCaptureNVENCTuning::Lossless:
+        return LOCTEXT("NVENCTuningTooltipLossless", "Force lossless tuning when the preset allows it.");
+    default:
+        return FText::GetEmpty();
+    }
+}
+
+FText SOmniCaptureControlPanel::GetDiagnosticVerbosityTooltip(EOmniCaptureLogVerbosity Level) const
+{
+    switch (Level)
+    {
+    case EOmniCaptureLogVerbosity::ErrorsOnly:
+        return LOCTEXT("DiagnosticVerbosityErrorsTooltip", "Only record and display errors.");
+    case EOmniCaptureLogVerbosity::WarningsAndErrors:
+        return LOCTEXT("DiagnosticVerbosityWarningsTooltip", "Include warnings alongside errors.");
+    case EOmniCaptureLogVerbosity::Info:
+        return LOCTEXT("DiagnosticVerbosityInfoTooltip", "Capture informational messages, warnings, and errors.");
+    case EOmniCaptureLogVerbosity::Verbose:
+        return LOCTEXT("DiagnosticVerbosityVerboseTooltip", "Capture all diagnostic messages for maximum detail.");
+    default:
+        return FText::GetEmpty();
     }
 }
 
@@ -2796,6 +3103,14 @@ void SOmniCaptureControlPanel::RefreshConfigurationSummary()
     {
         ColorFormatCombo->SetSelectedItem(FindColorFormatOption(Snapshot.NVENCColorFormat));
     }
+    if (!bSkipComboUpdates && NVENCPresetCombo.IsValid())
+    {
+        NVENCPresetCombo->SetSelectedItem(FindNVENCPresetOption(Snapshot.Quality.NVENCPreset));
+    }
+    if (!bSkipComboUpdates && NVENCTuningCombo.IsValid())
+    {
+        NVENCTuningCombo->SetSelectedItem(FindNVENCTuningOption(Snapshot.Quality.NVENCTuning));
+    }
     if (!bSkipComboUpdates && ProjectionCombo.IsValid())
     {
         ProjectionCombo->SetSelectedItem(FindProjectionOption(Snapshot.Projection));
@@ -2811,6 +3126,10 @@ void SOmniCaptureControlPanel::RefreshConfigurationSummary()
     if (!bSkipComboUpdates && PNGBitDepthCombo.IsValid())
     {
         PNGBitDepthCombo->SetSelectedItem(FindPNGBitDepthOption(Snapshot.PNGBitDepth));
+    }
+    if (!bSkipComboUpdates && DiagnosticVerbosityCombo.IsValid())
+    {
+        DiagnosticVerbosityCombo->SetSelectedItem(FindDiagnosticVerbosityOption(Snapshot.DiagnosticVerbosity));
     }
 }
 
@@ -3031,6 +3350,22 @@ void SOmniCaptureControlPanel::ApplyColorFormat(EOmniCaptureColorFormat Format)
     });
 }
 
+void SOmniCaptureControlPanel::ApplyNVENCPreset(EOmniCaptureNVENCPreset Preset)
+{
+    ModifyCaptureSettings([Preset](FOmniCaptureSettings& Settings)
+    {
+        Settings.Quality.NVENCPreset = Preset;
+    });
+}
+
+void SOmniCaptureControlPanel::ApplyNVENCTuning(EOmniCaptureNVENCTuning Tuning)
+{
+    ModifyCaptureSettings([Tuning](FOmniCaptureSettings& Settings)
+    {
+        Settings.Quality.NVENCTuning = Tuning;
+    });
+}
+
 void SOmniCaptureControlPanel::ApplyImageFormat(EOmniCaptureImageFormat Format)
 {
     ModifyCaptureSettings([Format](FOmniCaptureSettings& Settings)
@@ -3045,6 +3380,19 @@ void SOmniCaptureControlPanel::ApplyPNGBitDepth(EOmniCapturePNGBitDepth BitDepth
     {
         Settings.PNGBitDepth = BitDepth;
     });
+}
+
+void SOmniCaptureControlPanel::ApplyDiagnosticVerbosity(EOmniCaptureLogVerbosity Level)
+{
+    ModifyCaptureSettings([Level](FOmniCaptureSettings& Settings)
+    {
+        Settings.DiagnosticVerbosity = Level;
+    });
+
+    if (UOmniCaptureSubsystem* Subsystem = GetSubsystem())
+    {
+        Subsystem->SetActiveDiagnosticVerbosity(Level);
+    }
 }
 
 void SOmniCaptureControlPanel::ApplyMetadataToggle(EMetadataToggle Toggle, bool bEnabled)
@@ -3372,6 +3720,30 @@ TEnumOptionPtr<EOmniCaptureColorFormat> SOmniCaptureControlPanel::FindColorForma
     return ColorFormatOptions.Num() > 0 ? ColorFormatOptions[0] : nullptr;
 }
 
+TEnumOptionPtr<EOmniCaptureNVENCPreset> SOmniCaptureControlPanel::FindNVENCPresetOption(EOmniCaptureNVENCPreset Preset) const
+{
+    for (const TEnumOptionPtr<EOmniCaptureNVENCPreset>& Option : NVENCPresetOptions)
+    {
+        if (Option.IsValid() && static_cast<EOmniCaptureNVENCPreset>(Option->GetValue()) == Preset)
+        {
+            return Option;
+        }
+    }
+    return NVENCPresetOptions.Num() > 0 ? NVENCPresetOptions[0] : nullptr;
+}
+
+TEnumOptionPtr<EOmniCaptureNVENCTuning> SOmniCaptureControlPanel::FindNVENCTuningOption(EOmniCaptureNVENCTuning Tuning) const
+{
+    for (const TEnumOptionPtr<EOmniCaptureNVENCTuning>& Option : NVENCTuningOptions)
+    {
+        if (Option.IsValid() && static_cast<EOmniCaptureNVENCTuning>(Option->GetValue()) == Tuning)
+        {
+            return Option;
+        }
+    }
+    return NVENCTuningOptions.Num() > 0 ? NVENCTuningOptions[0] : nullptr;
+}
+
 TEnumOptionPtr<EOmniCaptureProjection> SOmniCaptureControlPanel::FindProjectionOption(EOmniCaptureProjection Projection) const
 {
     for (const TEnumOptionPtr<EOmniCaptureProjection>& Option : ProjectionOptions)
@@ -3432,6 +3804,18 @@ TEnumOptionPtr<EOutputDirectoryMode> SOmniCaptureControlPanel::FindOutputDirecto
     return OutputDirectoryModeOptions.Num() > 0 ? OutputDirectoryModeOptions[0] : nullptr;
 }
 
+TEnumOptionPtr<EOmniCaptureLogVerbosity> SOmniCaptureControlPanel::FindDiagnosticVerbosityOption(EOmniCaptureLogVerbosity Level) const
+{
+    for (const TEnumOptionPtr<EOmniCaptureLogVerbosity>& Option : DiagnosticVerbosityOptions)
+    {
+        if (Option.IsValid() && static_cast<EOmniCaptureLogVerbosity>(Option->GetValue()) == Level)
+        {
+            return Option;
+        }
+    }
+    return DiagnosticVerbosityOptions.Num() > 0 ? DiagnosticVerbosityOptions[0] : nullptr;
+}
+
 void SOmniCaptureControlPanel::HandleOutputFormatChanged(TEnumOptionPtr<EOmniOutputFormat> NewFormat, ESelectInfo::Type SelectInfo)
 {
     if (NewFormat.IsValid())
@@ -3469,6 +3853,24 @@ void SOmniCaptureControlPanel::HandleColorFormatChanged(TEnumOptionPtr<EOmniCapt
         }
         ApplyColorFormat(Format);
     }
+}
+
+void SOmniCaptureControlPanel::HandleNVENCPresetChanged(TEnumOptionPtr<EOmniCaptureNVENCPreset> NewPreset, ESelectInfo::Type SelectInfo)
+{
+    if (!IsNVENCControlsEnabled() || !NewPreset.IsValid())
+    {
+        return;
+    }
+    ApplyNVENCPreset(static_cast<EOmniCaptureNVENCPreset>(NewPreset->GetValue()));
+}
+
+void SOmniCaptureControlPanel::HandleNVENCTuningChanged(TEnumOptionPtr<EOmniCaptureNVENCTuning> NewTuning, ESelectInfo::Type SelectInfo)
+{
+    if (!IsNVENCControlsEnabled() || !NewTuning.IsValid())
+    {
+        return;
+    }
+    ApplyNVENCTuning(static_cast<EOmniCaptureNVENCTuning>(NewTuning->GetValue()));
 }
 
 void SOmniCaptureControlPanel::HandleImageFormatChanged(TEnumOptionPtr<EOmniCaptureImageFormat> NewFormat, ESelectInfo::Type SelectInfo)
@@ -3527,6 +3929,15 @@ void SOmniCaptureControlPanel::HandleOutputDirectoryModeChanged(TEnumOptionPtr<E
     {
         ApplyOutputDirectoryMode(EOutputDirectoryMode::ProjectDefault);
     }
+}
+
+void SOmniCaptureControlPanel::HandleDiagnosticVerbosityChanged(TEnumOptionPtr<EOmniCaptureLogVerbosity> NewLevel, ESelectInfo::Type SelectInfo)
+{
+    if (!NewLevel.IsValid())
+    {
+        return;
+    }
+    ApplyDiagnosticVerbosity(static_cast<EOmniCaptureLogVerbosity>(NewLevel->GetValue()));
 }
 
 TSharedRef<SWidget> SOmniCaptureControlPanel::GenerateOutputDirectoryModeOption(TEnumOptionPtr<EOutputDirectoryMode> InValue) const

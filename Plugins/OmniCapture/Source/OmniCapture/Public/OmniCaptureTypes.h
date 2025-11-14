@@ -118,6 +118,31 @@ UENUM(BlueprintType)
 enum class EOmniCaptureColorFormat : uint8 { NV12, P010, BGRA };
 
 UENUM(BlueprintType)
+enum class EOmniCaptureNVENCPreset : uint8
+{
+        Automatic,
+        Default,
+        LowLatencyHighQuality,
+        P1,
+        P2,
+        P3,
+        P4,
+        P5,
+        P6,
+        P7
+};
+
+UENUM(BlueprintType)
+enum class EOmniCaptureNVENCTuning : uint8
+{
+        Automatic,
+        HighQuality,
+        LowLatency,
+        UltraLowLatency,
+        Lossless
+};
+
+UENUM(BlueprintType)
 enum class EOmniCaptureNVENCD3D12Interop : uint8
 {
         Bridge UMETA(DisplayName = "D3D11-on-12 Bridge"),
@@ -142,6 +167,15 @@ enum class EOmniCaptureDiagnosticLevel : uint8
         Info,
         Warning,
         Error
+};
+
+UENUM(BlueprintType)
+enum class EOmniCaptureLogVerbosity : uint8
+{
+        ErrorsOnly,
+        WarningsAndErrors,
+        Info,
+        Verbose
 };
 
 UENUM(BlueprintType)
@@ -196,13 +230,15 @@ struct FOmniCaptureRenderFeatureOverrides
 USTRUCT(BlueprintType)
 struct FOmniCaptureQuality
 {
-	GENERATED_BODY()
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Video") int32 TargetBitrateKbps = 60000;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Video") int32 MaxBitrateKbps = 80000;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Video") int32 GOPLength = 60;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Video") int32 BFrames = 2;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Video") bool bLowLatency = false;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Video") EOmniCaptureRateControlMode RateControlMode = EOmniCaptureRateControlMode::ConstantBitrate;
+        GENERATED_BODY()
+        UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Video") int32 TargetBitrateKbps = 60000;
+        UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Video") int32 MaxBitrateKbps = 80000;
+        UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Video") int32 GOPLength = 60;
+        UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Video") int32 BFrames = 2;
+        UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Video") bool bLowLatency = false;
+        UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Video") EOmniCaptureRateControlMode RateControlMode = EOmniCaptureRateControlMode::ConstantBitrate;
+        UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Video") EOmniCaptureNVENCPreset NVENCPreset = EOmniCaptureNVENCPreset::Automatic;
+        UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Video") EOmniCaptureNVENCTuning NVENCTuning = EOmniCaptureNVENCTuning::Automatic;
 };
 
 USTRUCT(BlueprintType)
@@ -251,7 +287,8 @@ struct OMNICAPTURE_API FOmniCaptureSettings
         UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Output") bool bAllowNVENCFallback = true;
         UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Output", meta = (ClampMin = 1, UIMin = 1)) int32 MaxPendingImageTasks = 8;
         UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Diagnostics", meta = (ClampMin = 0)) int32 MinimumFreeDiskSpaceGB = 2;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Diagnostics", meta = (ClampMin = 0.1, ClampMax = 1.0)) float LowFrameRateWarningRatio = 0.85f;
+        UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Diagnostics", meta = (ClampMin = 0.1, ClampMax = 1.0)) float LowFrameRateWarningRatio = 0.85f;
+        UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Diagnostics") EOmniCaptureLogVerbosity DiagnosticVerbosity = EOmniCaptureLogVerbosity::Info;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Output") FString PreferredFFmpegPath;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Capture", meta = (ClampMin = 0.0, ClampMax = 1.0)) float SeamBlend = 0.25f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Capture", meta = (ClampMin = 0.0, ClampMax = 1.0)) float PolarDampening = 0.5f;
