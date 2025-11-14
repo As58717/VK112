@@ -866,11 +866,6 @@ bool FNVENCSession::Open(ENVENCCodec Codec, void* InDevice, NV_ENC_DEVICE_TYPE I
             EncodeConfig.profileGUID = NV_ENC_H264_PROFILE_MAIN_GUID;
             EncodeConfig.encodeCodecConfig.h264Config.idrPeriod = EncodeConfig.gopLength;
         }
-        else
-        {
-            EncodeConfig.profileGUID = NV_ENC_HEVC_PROFILE_MAIN_GUID;
-            EncodeConfig.encodeCodecConfig.hevcConfig.idrPeriod = EncodeConfig.gopLength;
-        }
 
         NvBufferFormat = ToNVFormat(Parameters.BufferFormat);
         if (Parameters.Codec == ENVENCCodec::H264 && Parameters.BufferFormat != ENVENCBufferFormat::NV12)
@@ -891,9 +886,31 @@ bool FNVENCSession::Open(ENVENCCodec Codec, void* InDevice, NV_ENC_DEVICE_TYPE I
         }
         else
         {
-            EncodeConfig.encodeCodecConfig.hevcConfig.chromaFormatIDC = NvChromaFormat;
-            EncodeConfig.encodeCodecConfig.hevcConfig.inputBitDepth = NvBitDepth;
-            EncodeConfig.encodeCodecConfig.hevcConfig.outputBitDepth = NvBitDepth;
+            const bool bIs10Bit = NvBitDepth == NV_ENC_BIT_DEPTH_10;
+#if defined(NV_ENC_HEVC_PROFILE_MAIN10_GUID)
+            EncodeConfig.profileGUID = bIs10Bit ? NV_ENC_HEVC_PROFILE_MAIN10_GUID : NV_ENC_HEVC_PROFILE_MAIN_GUID;
+#else
+            EncodeConfig.profileGUID = NV_ENC_HEVC_PROFILE_MAIN_GUID;
+#endif
+
+            NV_ENC_CONFIG_HEVC& HevcConfig = EncodeConfig.encodeCodecConfig.hevcConfig;
+            FMemory::Memzero(&HevcConfig, sizeof(NV_ENC_CONFIG_HEVC));
+
+            HevcConfig.level = NV_ENC_LEVEL_AUTOSELECT;
+            HevcConfig.tier = NV_ENC_TIER_HEVC_MAIN;
+            HevcConfig.minCUSize = NV_ENC_HEVC_CUSIZE_AUTOSELECT;
+            HevcConfig.maxCUSize = NV_ENC_HEVC_CUSIZE_32x32;
+            HevcConfig.chromaFormatIDC = NvChromaFormat;
+            HevcConfig.inputBitDepth = NvBitDepth;
+            HevcConfig.outputBitDepth = NvBitDepth;
+            HevcConfig.idrPeriod = EncodeConfig.gopLength;
+            HevcConfig.useBFramesAsRef = NV_ENC_BFRAME_REF_MODE_DISABLED;
+            HevcConfig.numRefL0 = NV_ENC_NUM_REF_FRAMES_AUTOSELECT;
+            HevcConfig.numRefL1 = NV_ENC_NUM_REF_FRAMES_AUTOSELECT;
+
+#if defined(NV_ENC_CONFIG_HEVC_PIXEL_BIT_DEPTH_MINUS8)
+            HevcConfig.pixelBitDepthMinus8 = bIs10Bit ? 2u : 0u;
+#endif
         }
 
         InitializeParams = {};
