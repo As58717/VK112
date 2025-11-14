@@ -313,6 +313,7 @@ namespace OmniNVENC
             }
 
             OmniNVENC::FNVENCSession Session;
+            Session.SetLogContext(TEXT("NVENC capability query"));
             if (!Session.Open(Codec, Device.GetReference(), NV_ENC_DEVICE_TYPE_DIRECTX))
             {
                 UE_LOG(LogNVENCCaps, Warning, TEXT("NVENC capability query failed – unable to open session for %s."), *FNVENCDefs::CodecToString(Codec));

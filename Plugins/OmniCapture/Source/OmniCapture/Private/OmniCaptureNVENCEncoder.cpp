@@ -496,6 +496,7 @@ namespace
         Device = LocalDevice.GetReference();
 
         FNVENCSession Session;
+        Session.SetLogContext(TEXT("NVENC probe session"));
         if (!Session.Open(Codec, Device, NV_ENC_DEVICE_TYPE_DIRECTX))
         {
             const FString SessionError = Session.GetLastError();
@@ -708,7 +709,12 @@ namespace
 #endif
 }
 
-FOmniCaptureNVENCEncoder::FOmniCaptureNVENCEncoder() = default;
+FOmniCaptureNVENCEncoder::FOmniCaptureNVENCEncoder()
+{
+#if OMNI_WITH_NVENC
+    EncoderSession.SetLogContext(TEXT("NVENC capture session"));
+#endif
+}
 FOmniCaptureNVENCEncoder::~FOmniCaptureNVENCEncoder()
 {
     Finalize();

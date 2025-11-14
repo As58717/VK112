@@ -226,6 +226,23 @@ namespace OmniNVENC
 #endif
     }
 
+void FNVENCSession::SetLogContext(const FString& InContext)
+    {
+        if (InContext.IsEmpty())
+        {
+            LogContext = TEXT("NVENC session");
+        }
+        else
+        {
+            LogContext = InContext;
+        }
+    }
+
+const TCHAR* FNVENCSession::GetLogContextLabel() const
+    {
+        return LogContext.IsEmpty() ? TEXT("NVENC session") : *LogContext;
+    }
+
 bool FNVENCSession::Open(ENVENCCodec Codec, void* InDevice, NV_ENC_DEVICE_TYPE InDeviceType)
     {
         LastErrorMessage.Reset();
@@ -635,6 +652,7 @@ bool FNVENCSession::Open(ENVENCCodec Codec, void* InDevice, NV_ENC_DEVICE_TYPE I
         TNvEncInitializeEncoder InitializeEncoder = FunctionList.nvEncInitializeEncoder;
         TNvEncGetEncodePresetGUIDs GetPresetGUIDs = reinterpret_cast<TNvEncGetEncodePresetGUIDs>(FunctionList.nvEncGetEncodePresetGUIDs);
         NVENCSTATUS Status = NV_ENC_SUCCESS;
+        const TCHAR* ContextLabel = GetLogContextLabel();
 
         if (!ValidateFunction("NvEncGetEncodePresetConfig", GetPresetConfig))
         {
@@ -911,7 +929,8 @@ bool FNVENCSession::Open(ENVENCCodec Codec, void* InDevice, NV_ENC_DEVICE_TYPE I
             const FNVENCAPIVersion BuildVersion = FNVENCDefs::DecodeApiVersion(NVENCAPI_VERSION);
 
             UE_LOG(LogNVENCSession, Error,
-                TEXT("NvEncInitializeEncoder failed: %s (Codec=%s, Preset=%s, Profile=%s, Level=%s, API runtime=%s (0x%08x), API build=%s (0x%08x))"),
+                TEXT("%s ✗ NvEncInitializeEncoder failed: %s (Codec=%s, Preset=%s, Profile=%s, Level=%s, API runtime=%s (0x%08x), API build=%s (0x%08x))"),
+                ContextLabel,
                 *StatusString,
                 *CodecString,
                 *PresetString,
@@ -938,7 +957,7 @@ bool FNVENCSession::Open(ENVENCCodec Codec, void* InDevice, NV_ENC_DEVICE_TYPE I
 
         CurrentParameters = Parameters;
         bIsInitialised = true;
-        UE_LOG(LogNVENCSession, Log, TEXT("NVENC session ✓ Encoder initialised: %s"), *FNVENCParameterMapper::ToDebugString(CurrentParameters));
+        UE_LOG(LogNVENCSession, Log, TEXT("%s ✓ Encoder initialised: %s"), ContextLabel, *FNVENCParameterMapper::ToDebugString(CurrentParameters));
         return true;
 #endif
     }
