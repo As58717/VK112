@@ -135,8 +135,11 @@ private:
     void ApplyOutputFormat(EOmniOutputFormat Format);
     void ApplyCodec(EOmniCaptureCodec Codec);
     void ApplyColorFormat(EOmniCaptureColorFormat Format);
+    void ApplyNVENCPreset(EOmniCaptureNVENCPreset Preset);
+    void ApplyNVENCTuning(EOmniCaptureNVENCTuning Tuning);
     void ApplyImageFormat(EOmniCaptureImageFormat Format);
     void ApplyPNGBitDepth(EOmniCapturePNGBitDepth BitDepth);
+    void ApplyDiagnosticVerbosity(EOmniCaptureLogVerbosity Level);
     void ApplyMetadataToggle(EMetadataToggle Toggle, bool bEnabled);
     bool IsSphericalMetadataSupported() const;
 
@@ -188,15 +191,21 @@ private:
     TEnumOptionPtr<EOmniOutputFormat> FindOutputFormatOption(EOmniOutputFormat Format) const;
     TEnumOptionPtr<EOmniCaptureCodec> FindCodecOption(EOmniCaptureCodec Codec) const;
     TEnumOptionPtr<EOmniCaptureColorFormat> FindColorFormatOption(EOmniCaptureColorFormat Format) const;
+    TEnumOptionPtr<EOmniCaptureNVENCPreset> FindNVENCPresetOption(EOmniCaptureNVENCPreset Preset) const;
+    TEnumOptionPtr<EOmniCaptureNVENCTuning> FindNVENCTuningOption(EOmniCaptureNVENCTuning Tuning) const;
     TEnumOptionPtr<EOmniCaptureProjection> FindProjectionOption(EOmniCaptureProjection Projection) const;
     TEnumOptionPtr<EOmniCaptureFisheyeType> FindFisheyeTypeOption(EOmniCaptureFisheyeType Type) const;
     TEnumOptionPtr<EOmniCaptureImageFormat> FindImageFormatOption(EOmniCaptureImageFormat Format) const;
     TEnumOptionPtr<EOmniCapturePNGBitDepth> FindPNGBitDepthOption(EOmniCapturePNGBitDepth BitDepth) const;
     TEnumOptionPtr<EOutputDirectoryMode> FindOutputDirectoryModeOption(EOutputDirectoryMode Mode) const;
+    TEnumOptionPtr<EOmniCaptureLogVerbosity> FindDiagnosticVerbosityOption(EOmniCaptureLogVerbosity Level) const;
 
     void HandleOutputFormatChanged(TEnumOptionPtr<EOmniOutputFormat> NewFormat, ESelectInfo::Type SelectInfo);
     void HandleCodecChanged(TEnumOptionPtr<EOmniCaptureCodec> NewCodec, ESelectInfo::Type SelectInfo);
     void HandleColorFormatChanged(TEnumOptionPtr<EOmniCaptureColorFormat> NewFormat, ESelectInfo::Type SelectInfo);
+    void HandleNVENCPresetChanged(TEnumOptionPtr<EOmniCaptureNVENCPreset> NewPreset, ESelectInfo::Type SelectInfo);
+    void HandleNVENCTuningChanged(TEnumOptionPtr<EOmniCaptureNVENCTuning> NewTuning, ESelectInfo::Type SelectInfo);
+    void HandleDiagnosticVerbosityChanged(TEnumOptionPtr<EOmniCaptureLogVerbosity> NewLevel, ESelectInfo::Type SelectInfo);
 
     int32 GetTargetBitrate() const;
     int32 GetMaxBitrate() const;
@@ -247,6 +256,11 @@ private:
     EOutputDirectoryMode GetCurrentOutputDirectoryMode() const;
     void ApplyOutputDirectoryMode(EOutputDirectoryMode Mode);
     FText GetOutputDirectoryModeTooltip(EOutputDirectoryMode Mode) const;
+    bool IsNVENCOptionsVisible() const;
+    bool IsNVENCControlsEnabled() const;
+    FText GetNVENCPresetTooltip(EOmniCaptureNVENCPreset Preset) const;
+    FText GetNVENCTuningTooltip(EOmniCaptureNVENCTuning Tuning) const;
+    FText GetDiagnosticVerbosityTooltip(EOmniCaptureLogVerbosity Level) const;
 
 private:
     TWeakObjectPtr<UOmniCaptureEditorSettings> SettingsObject;
@@ -274,21 +288,27 @@ private:
     TArray<TEnumOptionPtr<EOmniOutputFormat>> OutputFormatOptions;
     TArray<TEnumOptionPtr<EOmniCaptureCodec>> CodecOptions;
     TArray<TEnumOptionPtr<EOmniCaptureColorFormat>> ColorFormatOptions;
+    TArray<TEnumOptionPtr<EOmniCaptureNVENCPreset>> NVENCPresetOptions;
+    TArray<TEnumOptionPtr<EOmniCaptureNVENCTuning>> NVENCTuningOptions;
     TArray<TEnumOptionPtr<EOmniCaptureProjection>> ProjectionOptions;
     TArray<TEnumOptionPtr<EOmniCaptureFisheyeType>> FisheyeTypeOptions;
     TArray<TEnumOptionPtr<EOmniCaptureImageFormat>> ImageFormatOptions;
     TArray<TEnumOptionPtr<EOmniCapturePNGBitDepth>> PNGBitDepthOptions;
     TArray<TEnumOptionPtr<EOutputDirectoryMode>> OutputDirectoryModeOptions;
+    TArray<TEnumOptionPtr<EOmniCaptureLogVerbosity>> DiagnosticVerbosityOptions;
 
     TSharedPtr<SComboBox<TEnumOptionPtr<EOmniCaptureStereoLayout>>> StereoLayoutCombo;
     TSharedPtr<SComboBox<TEnumOptionPtr<EOmniOutputFormat>>> OutputFormatCombo;
     TSharedPtr<SComboBox<TEnumOptionPtr<EOmniCaptureCodec>>> CodecCombo;
     TSharedPtr<SComboBox<TEnumOptionPtr<EOmniCaptureColorFormat>>> ColorFormatCombo;
+    TSharedPtr<SComboBox<TEnumOptionPtr<EOmniCaptureNVENCPreset>>> NVENCPresetCombo;
+    TSharedPtr<SComboBox<TEnumOptionPtr<EOmniCaptureNVENCTuning>>> NVENCTuningCombo;
     TSharedPtr<SComboBox<TEnumOptionPtr<EOmniCaptureProjection>>> ProjectionCombo;
     TSharedPtr<SComboBox<TEnumOptionPtr<EOmniCaptureFisheyeType>>> FisheyeTypeCombo;
     TSharedPtr<SComboBox<TEnumOptionPtr<EOmniCaptureImageFormat>>> ImageFormatCombo;
     TSharedPtr<SComboBox<TEnumOptionPtr<EOmniCapturePNGBitDepth>>> PNGBitDepthCombo;
     TSharedPtr<SComboBox<TEnumOptionPtr<EOutputDirectoryMode>>> OutputDirectoryModeCombo;
+    TSharedPtr<SComboBox<TEnumOptionPtr<EOmniCaptureLogVerbosity>>> DiagnosticVerbosityCombo;
 
     FFeatureAvailabilityState FeatureAvailability;
     double LastFeatureAvailabilityCheckTime = 0.0;

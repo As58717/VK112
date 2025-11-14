@@ -108,6 +108,8 @@ public:
     UFUNCTION(BlueprintCallable, Category = "OmniCapture|Diagnostics")
     FString GetLastErrorMessage() const { return LastErrorMessage; }
 
+    void SetActiveDiagnosticVerbosity(EOmniCaptureLogVerbosity InVerbosity);
+
     void SetPendingRigTransform(const FTransform& InTransform);
 
 private:
@@ -158,6 +160,8 @@ private:
     void ApplyRigTransform(AOmniCaptureRigActor* Rig);
     void RecordCaptureFailure(const FString& StepName, const FString& FailureMessage, ELogVerbosity::Type Verbosity = ELogVerbosity::Error);
     void RecordCaptureCompletion(bool bFinalizeOutputs);
+    bool ShouldRecordDiagnostic(EOmniCaptureDiagnosticLevel Level) const;
+    bool ShouldLogVerbosity(ELogVerbosity::Type Verbosity) const;
 
 private:
     friend class AOmniCaptureDirectorActor;
@@ -220,6 +224,8 @@ private:
     FString LastStillImagePath;
     FString BaseOutputDirectory;
     FString BaseOutputFileName;
+
+    EOmniCaptureLogVerbosity ActiveDiagnosticVerbosity = EOmniCaptureLogVerbosity::Info;
 
     TOptional<FTransform> PendingRigTransform;
     FTransform LastRigTransform = FTransform::Identity;

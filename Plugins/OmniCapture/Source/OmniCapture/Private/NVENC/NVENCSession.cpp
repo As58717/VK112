@@ -97,6 +97,66 @@ namespace OmniNVENC
             return FromWindowsGuid(InGuid).ToString(EGuidFormats::DigitsWithHyphensInBraces);
         }
 
+        bool PresetEnumToGuid(ENVENCPreset Preset, GUID& OutGuid)
+        {
+            switch (Preset)
+            {
+            case ENVENCPreset::Default:
+                OutGuid = ToWindowsGuid(FNVENCDefs::PresetDefaultGuid());
+                return true;
+            case ENVENCPreset::LowLatencyHighQuality:
+                OutGuid = ToWindowsGuid(FNVENCDefs::PresetLowLatencyHighQualityGuid());
+                return true;
+            case ENVENCPreset::P1:
+                OutGuid = ToWindowsGuid(FNVENCDefs::PresetP1Guid());
+                return true;
+            case ENVENCPreset::P2:
+                OutGuid = ToWindowsGuid(FNVENCDefs::PresetP2Guid());
+                return true;
+            case ENVENCPreset::P3:
+                OutGuid = ToWindowsGuid(FNVENCDefs::PresetP3Guid());
+                return true;
+            case ENVENCPreset::P4:
+                OutGuid = ToWindowsGuid(FNVENCDefs::PresetP4Guid());
+                return true;
+            case ENVENCPreset::P5:
+                OutGuid = ToWindowsGuid(FNVENCDefs::PresetP5Guid());
+                return true;
+            case ENVENCPreset::P6:
+                OutGuid = ToWindowsGuid(FNVENCDefs::PresetP6Guid());
+                return true;
+            case ENVENCPreset::P7:
+                OutGuid = ToWindowsGuid(FNVENCDefs::PresetP7Guid());
+                return true;
+            default:
+                return false;
+            }
+        }
+
+        NV_ENC_TUNING_INFO ToNVTuning(ENVENCTuningMode Mode)
+        {
+            switch (Mode)
+            {
+            case ENVENCTuningMode::HighQuality: return NV_ENC_TUNING_INFO_HIGH_QUALITY;
+            case ENVENCTuningMode::LowLatency: return NV_ENC_TUNING_INFO_LOW_LATENCY;
+            case ENVENCTuningMode::UltraLowLatency: return NV_ENC_TUNING_INFO_ULTRA_LOW_LATENCY;
+            case ENVENCTuningMode::Lossless: return NV_ENC_TUNING_INFO_LOSSLESS;
+            default: return NV_ENC_TUNING_INFO_UNDEFINED;
+            }
+        }
+
+        ENVENCTuningMode FromNVTuning(NV_ENC_TUNING_INFO Mode)
+        {
+            switch (Mode)
+            {
+            case NV_ENC_TUNING_INFO_HIGH_QUALITY: return ENVENCTuningMode::HighQuality;
+            case NV_ENC_TUNING_INFO_LOW_LATENCY: return ENVENCTuningMode::LowLatency;
+            case NV_ENC_TUNING_INFO_ULTRA_LOW_LATENCY: return ENVENCTuningMode::UltraLowLatency;
+            case NV_ENC_TUNING_INFO_LOSSLESS: return ENVENCTuningMode::Lossless;
+            default: return ENVENCTuningMode::Automatic;
+            }
+        }
+
         FString ProfileGuidToString(const GUID& InGuid)
         {
             if (FMemory::Memcmp(&InGuid, &NV_ENC_H264_PROFILE_BASELINE_GUID, sizeof(GUID)) == 0)
@@ -703,6 +763,49 @@ bool FNVENCSession::Open(ENVENCCodec Codec, void* InDevice, NV_ENC_DEVICE_TYPE I
         AddCandidate(ToWindowsGuid(FNVENCDefs::PresetP6Guid()), NV_ENC_TUNING_INFO_HIGH_QUALITY, TEXT("NV_ENC_PRESET_P6"));
         AddCandidate(ToWindowsGuid(FNVENCDefs::PresetP7Guid()), NV_ENC_TUNING_INFO_LOSSLESS, TEXT("NV_ENC_PRESET_P7"));
 
+        const ENVENCPreset RequestedPreset = Parameters.RequestedPreset;
+        const ENVENCTuningMode RequestedTuningMode = Parameters.RequestedTuning;
+        GUID RequestedPresetGuid = {};
+        const bool bHasRequestedPreset = PresetEnumToGuid(RequestedPreset, RequestedPresetGuid);
+        const NV_ENC_TUNING_INFO RequestedTuning = ToNVTuning(RequestedTuningMode);
+
+        if (bHasRequestedPreset)
+        {
+            int32 FoundIndex = INDEX_NONE;
+            for (int32 CandidateIndex = 0; CandidateIndex < PresetCandidates.Num(); ++CandidateIndex)
+            {
+                if (FMemory::Memcmp(&PresetCandidates[CandidateIndex].Guid, &RequestedPresetGuid, sizeof(GUID)) == 0)
+                {
+                    FoundIndex = CandidateIndex;
+                    break;
+                }
+            }
+
+            if (FoundIndex == INDEX_NONE)
+            {
+                FPresetCandidate PreferredCandidate;
+                PreferredCandidate.Guid = RequestedPresetGuid;
+                PreferredCandidate.Tuning = RequestedTuning;
+                PreferredCandidate.Description = FNVENCDefs::PresetGuidToString(FromWindowsGuid(RequestedPresetGuid));
+                PresetCandidates.Insert(PreferredCandidate, 0);
+            }
+            else
+            {
+                if (RequestedTuning != NV_ENC_TUNING_INFO_UNDEFINED)
+                {
+                    PresetCandidates[FoundIndex].Tuning = RequestedTuning;
+                }
+                if (FoundIndex != 0)
+                {
+                    PresetCandidates.Swap(0, FoundIndex);
+                }
+            }
+        }
+        else if (RequestedTuning != NV_ENC_TUNING_INFO_UNDEFINED && PresetCandidates.Num() > 0)
+        {
+            PresetCandidates[0].Tuning = RequestedTuning;
+        }
+
         uint32 RuntimePresetCount = 0;
 
         if (GetPresetGUIDs)
@@ -983,6 +1086,8 @@ bool FNVENCSession::Open(ENVENCCodec Codec, void* InDevice, NV_ENC_DEVICE_TYPE I
 
         CurrentParameters = Parameters;
         CurrentParameters.BufferFormat = EffectiveBufferFormat;
+        CurrentParameters.ActivePresetGuid = FromWindowsGuid(SelectedPreset.Guid);
+        CurrentParameters.ActiveTuning = FromNVTuning(SelectedPreset.Tuning);
         bIsInitialised = true;
         UE_LOG(LogNVENCSession, Log, TEXT("%s ✓ Encoder initialised: %s"), ContextLabel, *FNVENCParameterMapper::ToDebugString(CurrentParameters));
         return true;
@@ -1047,7 +1152,17 @@ bool FNVENCSession::Open(ENVENCCodec Codec, void* InDevice, NV_ENC_DEVICE_TYPE I
 
         EncodeConfig = NewConfig;
         InitializeParams = ReconfigureParams.reInitEncodeParams;
+        const FGuid PreviousPresetGuid = CurrentParameters.ActivePresetGuid;
+        const ENVENCTuningMode PreviousTuning = CurrentParameters.ActiveTuning;
         CurrentParameters = Parameters;
+        if (!CurrentParameters.ActivePresetGuid.IsValid())
+        {
+            CurrentParameters.ActivePresetGuid = PreviousPresetGuid;
+        }
+        if (CurrentParameters.ActiveTuning == ENVENCTuningMode::Automatic)
+        {
+            CurrentParameters.ActiveTuning = PreviousTuning;
+        }
         UE_LOG(LogNVENCSession, Verbose, TEXT("NVENC session reconfigured: %s"), *FNVENCParameterMapper::ToDebugString(CurrentParameters));
         return true;
 #endif

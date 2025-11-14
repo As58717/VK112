@@ -22,6 +22,29 @@ namespace OmniNVENC
         FULL,
     };
 
+    enum class ENVENCPreset : uint8
+    {
+        Automatic,
+        Default,
+        LowLatencyHighQuality,
+        P1,
+        P2,
+        P3,
+        P4,
+        P5,
+        P6,
+        P7,
+    };
+
+    enum class ENVENCTuningMode : uint8
+    {
+        Automatic,
+        HighQuality,
+        LowLatency,
+        UltraLowLatency,
+        Lossless,
+    };
+
     /**
      * Aggregated NVENC configuration used by the OmniCapture integration.
      */
@@ -38,6 +61,10 @@ namespace OmniNVENC
         int32 QPMax = -1;
         ENVENCRateControlMode RateControlMode = ENVENCRateControlMode::CBR;
         ENVENCMultipassMode MultipassMode = ENVENCMultipassMode::DISABLED;
+        ENVENCPreset RequestedPreset = ENVENCPreset::Automatic;
+        ENVENCTuningMode RequestedTuning = ENVENCTuningMode::Automatic;
+        ENVENCTuningMode ActiveTuning = ENVENCTuningMode::Automatic;
+        FGuid ActivePresetGuid;
         bool bEnableLookahead = false;
         bool bEnableAdaptiveQuantization = false;
         bool bEnableIntraRefresh = false;

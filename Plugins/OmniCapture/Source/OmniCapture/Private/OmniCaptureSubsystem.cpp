@@ -64,13 +64,58 @@ namespace
     }
 }
 
+bool UOmniCaptureSubsystem::ShouldRecordDiagnostic(EOmniCaptureDiagnosticLevel Level) const
+{
+    switch (ActiveDiagnosticVerbosity)
+    {
+    case EOmniCaptureLogVerbosity::ErrorsOnly:
+        return Level == EOmniCaptureDiagnosticLevel::Error;
+    case EOmniCaptureLogVerbosity::WarningsAndErrors:
+        return Level != EOmniCaptureDiagnosticLevel::Info;
+    case EOmniCaptureLogVerbosity::Info:
+    case EOmniCaptureLogVerbosity::Verbose:
+    default:
+        return true;
+    }
+}
+
+bool UOmniCaptureSubsystem::ShouldLogVerbosity(ELogVerbosity::Type Verbosity) const
+{
+    switch (ActiveDiagnosticVerbosity)
+    {
+    case EOmniCaptureLogVerbosity::ErrorsOnly:
+        return Verbosity <= ELogVerbosity::Error;
+    case EOmniCaptureLogVerbosity::WarningsAndErrors:
+        return Verbosity <= ELogVerbosity::Warning;
+    case EOmniCaptureLogVerbosity::Info:
+        return Verbosity <= ELogVerbosity::Log || Verbosity == ELogVerbosity::Display;
+    case EOmniCaptureLogVerbosity::Verbose:
+    default:
+        return true;
+    }
+}
+
 void UOmniCaptureSubsystem::SetDiagnosticContext(const FString& StepName)
 {
     CurrentDiagnosticStep = StepName;
 }
 
+void UOmniCaptureSubsystem::SetActiveDiagnosticVerbosity(EOmniCaptureLogVerbosity InVerbosity)
+{
+    ActiveDiagnosticVerbosity = InVerbosity;
+}
+
 void UOmniCaptureSubsystem::AppendDiagnostic(EOmniCaptureDiagnosticLevel Level, const FString& Message, const FString& StepOverride)
 {
+    if (!ShouldRecordDiagnostic(Level))
+    {
+        if (Level == EOmniCaptureDiagnosticLevel::Error)
+        {
+            LastErrorMessage = Message;
+        }
+        return;
+    }
+
     FOmniCaptureDiagnosticEntry& Entry = DiagnosticLog.AddDefaulted_GetRef();
     Entry.Timestamp = FDateTime::UtcNow();
     Entry.SecondsSinceCaptureStart = CaptureStartTime > 0.0 ? static_cast<float>(FPlatformTime::Seconds() - CaptureStartTime) : 0.0f;
@@ -94,11 +139,25 @@ void UOmniCaptureSubsystem::AppendDiagnostic(EOmniCaptureDiagnosticLevel Level, 
 
 void UOmniCaptureSubsystem::AppendDiagnosticFromVerbosity(ELogVerbosity::Type Verbosity, const FString& Message, const FString& StepOverride)
 {
-    AppendDiagnostic(ConvertVerbosityToDiagnostic(Verbosity), Message, StepOverride);
+    const EOmniCaptureDiagnosticLevel Level = ConvertVerbosityToDiagnostic(Verbosity);
+    if (!ShouldRecordDiagnostic(Level))
+    {
+        if (Level == EOmniCaptureDiagnosticLevel::Error)
+        {
+            AppendDiagnostic(Level, Message, StepOverride);
+        }
+        return;
+    }
+    AppendDiagnostic(Level, Message, StepOverride);
 }
 
 void UOmniCaptureSubsystem::LogDiagnosticMessage(ELogVerbosity::Type Verbosity, const FString& StepName, const FString& Message)
 {
+    if (!ShouldLogVerbosity(Verbosity))
+    {
+        return;
+    }
+
     switch (Verbosity)
     {
     case ELogVerbosity::Fatal:
@@ -258,6 +317,7 @@ void UOmniCaptureSubsystem::BeginCapture(const FOmniCaptureSettings& InSettings)
     }
 
     ClearCaptureDiagnosticLog();
+    SetActiveDiagnosticVerbosity(InSettings.DiagnosticVerbosity);
 
     ActiveCaptureAttemptId = ++CaptureAttemptCounter;
     CurrentDiagnosticAttemptId = ActiveCaptureAttemptId;
