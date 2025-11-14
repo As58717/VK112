@@ -1584,7 +1584,8 @@ void UOmniCaptureSubsystem::CaptureFrame()
         }
     }
     const bool bRequiresGPU = ActiveSettings.OutputFormat == EOmniOutputFormat::NVENCHardware;
-    if (!ConversionResult.PixelData.IsValid())
+    const bool bRequiresPixelData = (ActiveSettings.OutputFormat == EOmniOutputFormat::ImageSequence) || ImageWriter.IsValid();
+    if (bRequiresPixelData && !ConversionResult.PixelData.IsValid())
     {
         HandleDroppedFrame();
         return;
