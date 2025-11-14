@@ -867,12 +867,21 @@ bool FNVENCSession::Open(ENVENCCodec Codec, void* InDevice, NV_ENC_DEVICE_TYPE I
             EncodeConfig.encodeCodecConfig.h264Config.idrPeriod = EncodeConfig.gopLength;
         }
 
-        NvBufferFormat = ToNVFormat(Parameters.BufferFormat);
-        if (Parameters.Codec == ENVENCCodec::H264 && Parameters.BufferFormat != ENVENCBufferFormat::NV12)
+        ENVENCBufferFormat EffectiveBufferFormat = Parameters.BufferFormat;
+        NvBufferFormat = ToNVFormat(EffectiveBufferFormat);
+        if (Parameters.Codec == ENVENCCodec::H264 && EffectiveBufferFormat != ENVENCBufferFormat::NV12)
         {
             UE_LOG(LogNVENCSession, Warning,
                 TEXT("NVENC session switching H.264 input format to NV12 8-bit 4:2:0 for compatibility."));
             NvBufferFormat = NV_ENC_BUFFER_FORMAT_NV12;
+            EffectiveBufferFormat = ENVENCBufferFormat::NV12;
+        }
+        else if (Parameters.Codec == ENVENCCodec::HEVC && EffectiveBufferFormat == ENVENCBufferFormat::BGRA)
+        {
+            UE_LOG(LogNVENCSession, Warning,
+                TEXT("NVENC session switching HEVC input format to NV12 8-bit 4:2:0 for compatibility."));
+            NvBufferFormat = NV_ENC_BUFFER_FORMAT_NV12;
+            EffectiveBufferFormat = ENVENCBufferFormat::NV12;
         }
 
         const NV_ENC_BIT_DEPTH NvBitDepth = ToNVBitDepth(NvBufferFormat);
@@ -973,6 +982,7 @@ bool FNVENCSession::Open(ENVENCCodec Codec, void* InDevice, NV_ENC_DEVICE_TYPE I
         }
 
         CurrentParameters = Parameters;
+        CurrentParameters.BufferFormat = EffectiveBufferFormat;
         bIsInitialised = true;
         UE_LOG(LogNVENCSession, Log, TEXT("%s ✓ Encoder initialised: %s"), ContextLabel, *FNVENCParameterMapper::ToDebugString(CurrentParameters));
         return true;
