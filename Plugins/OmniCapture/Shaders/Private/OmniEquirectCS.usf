@@ -22,8 +22,8 @@ cbuffer FOmniEquirectParameters
 float3 DirectionFromEquirect(uint2 Pixel, float2 EyeRes, out float Latitude)
 {
     float2 UV = (float2(Pixel) + 0.5f) / EyeRes;
-    float Longitude = (UV.x * 2.0f - 1.0f) * LongitudeSpan;
-    Latitude = (0.5f - UV.y) * LatitudeSpan * 2.0f;
+    float Longitude = (UV.x - 0.5f) * LongitudeSpan;
+    Latitude = (0.5f - UV.y) * LatitudeSpan;
 
     float CosLat = cos(Latitude);
     float SinLat = sin(Latitude);

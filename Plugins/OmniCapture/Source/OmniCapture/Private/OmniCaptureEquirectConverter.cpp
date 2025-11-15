@@ -323,8 +323,8 @@ namespace
     FVector DirectionFromEquirectPixelCPU(const FIntPoint& Pixel, const FIntPoint& EyeResolution, double LongitudeSpan, double LatitudeSpan, float& OutLatitude)
     {
         const FVector2D UV((static_cast<double>(Pixel.X) + 0.5) / EyeResolution.X, (static_cast<double>(Pixel.Y) + 0.5) / EyeResolution.Y);
-        const double Longitude = (UV.X * 2.0 - 1.0) * LongitudeSpan;
-        const double Latitude = (0.5 - UV.Y) * LatitudeSpan * 2.0;
+        const double Longitude = (UV.X - 0.5) * LongitudeSpan;
+        const double Latitude = (0.5 - UV.Y) * LatitudeSpan;
         OutLatitude = static_cast<float>(Latitude);
 
         const double CosLat = FMath::Cos(Latitude);

@@ -374,12 +374,12 @@ float FOmniCaptureSettings::GetVerticalFOVDegrees() const
 
 float FOmniCaptureSettings::GetLongitudeSpanRadians() const
 {
-    return FMath::DegreesToRadians(GetHorizontalFOVDegrees() * 0.5f);
+    return FMath::DegreesToRadians(GetHorizontalFOVDegrees());
 }
 
 float FOmniCaptureSettings::GetLatitudeSpanRadians() const
 {
-    return FMath::DegreesToRadians(GetVerticalFOVDegrees() * 0.5f);
+    return FMath::DegreesToRadians(GetVerticalFOVDegrees());
 }
 
 FString FOmniCaptureSettings::GetImageFileExtension() const
