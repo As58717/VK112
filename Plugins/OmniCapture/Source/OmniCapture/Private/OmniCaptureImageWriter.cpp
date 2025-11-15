@@ -624,6 +624,14 @@ bool FOmniCaptureImageWriter::WritePNGWithRowSource(const FString& FilePath, con
     png_set_write_fn(PngPtr, Archive.Get(), PngWriteDataCallback, PngFlushCallback);
     png_set_IHDR(PngPtr, InfoPtr, Size.X, Size.Y, BitDepth, ColorType, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
 
+    // The renderer feeds us data in BGRA order when we are dealing with BGRA pixel
+    // buffers. LibPNG assumes RGBA channel order by default, so explicitly inform it
+    // when we are passing BGRA data so that the channels are swizzled correctly.
+    if (Format == ERGBFormat::BGRA)
+    {
+        png_set_bgr(PngPtr);
+    }
+
     if (BitDepth == 16)
     {
         png_set_swap(PngPtr);
