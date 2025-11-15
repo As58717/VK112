@@ -752,12 +752,14 @@ namespace
 
         const uint32 PixelCount = OutputWidth * OutputHeight;
         const uint32 BytesPerPixel = Precision == EOmniCapturePixelPrecision::FullFloat ? sizeof(FLinearColor) : sizeof(FFloat16Color);
-        int32 RowPitchInPixels = 0;
-        const uint8* RawData = static_cast<const uint8*>(Readback.Lock(RowPitchInPixels));
+        int32 RowPitchInBytes = 0;
+        const uint8* RawData = static_cast<const uint8*>(Readback.Lock(RowPitchInBytes));
 
         if (RawData)
         {
-            const uint32 RowPitch = RowPitchInPixels > 0 ? static_cast<uint32>(RowPitchInPixels) : static_cast<uint32>(OutputWidth);
+            const uint32 RowStrideInBytes = RowPitchInBytes > 0
+                ? static_cast<uint32>(RowPitchInBytes)
+                : static_cast<uint32>(OutputWidth * BytesPerPixel);
             if (bUseLinear)
             {
                 if (Precision == EOmniCapturePixelPrecision::FullFloat)
@@ -766,10 +768,10 @@ namespace
                     PixelData->Pixels.SetNum(PixelCount);
 
                     FLinearColor* DestData = PixelData->Pixels.GetData();
-                    const FLinearColor* SourcePixels = reinterpret_cast<const FLinearColor*>(RawData);
                     for (int32 Row = 0; Row < OutputHeight; ++Row)
                     {
-                        const FLinearColor* SourceRow = SourcePixels + RowPitch * Row;
+                        const uint8* SourceRowBytes = RawData + RowStrideInBytes * Row;
+                        const FLinearColor* SourceRow = reinterpret_cast<const FLinearColor*>(SourceRowBytes);
                         FMemory::Memcpy(DestData + Row * OutputWidth, SourceRow, OutputWidth * BytesPerPixel);
                     }
 
@@ -792,10 +794,10 @@ namespace
                     PixelData->Pixels.SetNum(PixelCount);
 
                     FFloat16Color* DestData = PixelData->Pixels.GetData();
-                    const FFloat16Color* SourcePixels = reinterpret_cast<const FFloat16Color*>(RawData);
                     for (int32 Row = 0; Row < OutputHeight; ++Row)
                     {
-                        const FFloat16Color* SourceRow = SourcePixels + RowPitch * Row;
+                        const uint8* SourceRowBytes = RawData + RowStrideInBytes * Row;
+                        const FFloat16Color* SourceRow = reinterpret_cast<const FFloat16Color*>(SourceRowBytes);
                         FMemory::Memcpy(DestData + Row * OutputWidth, SourceRow, OutputWidth * BytesPerPixel);
                     }
 
@@ -821,10 +823,9 @@ namespace
                 PixelData->Pixels.SetNum(PixelCount);
                 OutResult.PreviewPixels.SetNum(PixelCount);
 
-                const uint8* SourcePixels = RawData;
                 for (int32 Row = 0; Row < OutputHeight; ++Row)
                 {
-                    const uint8* SourceRow = SourcePixels + (RowPitch * Row * BytesPerPixel);
+                    const uint8* SourceRow = RawData + RowStrideInBytes * Row;
                     FColor* DestRow = PixelData->Pixels.GetData() + Row * OutputWidth;
                     for (int32 Column = 0; Column < OutputWidth; ++Column)
                     {
@@ -1022,12 +1023,14 @@ namespace
 
         const uint32 PixelCount = OutputSize.X * OutputSize.Y;
         const uint32 BytesPerPixel = Precision == EOmniCapturePixelPrecision::FullFloat ? sizeof(FLinearColor) : sizeof(FFloat16Color);
-        int32 RowPitchInPixels = 0;
-        const uint8* RawData = static_cast<const uint8*>(Readback.Lock(RowPitchInPixels));
+        int32 RowPitchInBytes = 0;
+        const uint8* RawData = static_cast<const uint8*>(Readback.Lock(RowPitchInBytes));
 
         if (RawData)
         {
-            const uint32 RowPitch = RowPitchInPixels > 0 ? static_cast<uint32>(RowPitchInPixels) : static_cast<uint32>(OutputSize.X);
+            const uint32 RowStrideInBytes = RowPitchInBytes > 0
+                ? static_cast<uint32>(RowPitchInBytes)
+                : static_cast<uint32>(OutputSize.X * BytesPerPixel);
             if (bUseLinear)
             {
                 if (Precision == EOmniCapturePixelPrecision::FullFloat)
@@ -1036,10 +1039,10 @@ namespace
                     PixelData->Pixels.SetNum(PixelCount);
 
                     FLinearColor* DestData = PixelData->Pixels.GetData();
-                    const FLinearColor* SourcePixels = reinterpret_cast<const FLinearColor*>(RawData);
                     for (int32 Row = 0; Row < OutputSize.Y; ++Row)
                     {
-                        const FLinearColor* SourceRow = SourcePixels + RowPitch * Row;
+                        const uint8* SourceRowBytes = RawData + RowStrideInBytes * Row;
+                        const FLinearColor* SourceRow = reinterpret_cast<const FLinearColor*>(SourceRowBytes);
                         FMemory::Memcpy(DestData + Row * OutputSize.X, SourceRow, OutputSize.X * BytesPerPixel);
                     }
 
@@ -1062,10 +1065,10 @@ namespace
                     PixelData->Pixels.SetNum(PixelCount);
 
                     FFloat16Color* DestData = PixelData->Pixels.GetData();
-                    const FFloat16Color* SourcePixels = reinterpret_cast<const FFloat16Color*>(RawData);
                     for (int32 Row = 0; Row < OutputSize.Y; ++Row)
                     {
-                        const FFloat16Color* SourceRow = SourcePixels + RowPitch * Row;
+                        const uint8* SourceRowBytes = RawData + RowStrideInBytes * Row;
+                        const FFloat16Color* SourceRow = reinterpret_cast<const FFloat16Color*>(SourceRowBytes);
                         FMemory::Memcpy(DestData + Row * OutputSize.X, SourceRow, OutputSize.X * BytesPerPixel);
                     }
 
@@ -1091,10 +1094,9 @@ namespace
                 PixelData->Pixels.SetNum(PixelCount);
                 OutResult.PreviewPixels.SetNum(PixelCount);
 
-                const uint8* SourcePixels = RawData;
                 for (int32 Row = 0; Row < OutputSize.Y; ++Row)
                 {
-                    const uint8* SourceRow = SourcePixels + (RowPitch * Row * BytesPerPixel);
+                    const uint8* SourceRow = RawData + RowStrideInBytes * Row;
                     FColor* DestRow = PixelData->Pixels.GetData() + Row * OutputSize.X;
                     for (int32 Column = 0; Column < OutputSize.X; ++Column)
                     {
