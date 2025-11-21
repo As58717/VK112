@@ -836,7 +836,11 @@ bool FNVENCSession::Open(ENVENCCodec Codec, void* InDevice, NV_ENC_DEVICE_TYPE I
             UE_LOG(LogNVENCSession, Log, TEXT("NVENC session ✓ Queried %u encode preset GUIDs."), RuntimePresetCount);
         }
 
-        NV_ENC_PRESET_CONFIG PresetConfig = {};
+        TArray<NV_ENC_PRESET_CONFIG> PresetConfigs;
+        TArray<NVENCSTATUS> PresetStatuses;
+        PresetConfigs.SetNum(PresetCandidates.Num());
+        PresetStatuses.SetNum(PresetCandidates.Num());
+
         int32 SelectedPresetIndex = INDEX_NONE;
         NVENCSTATUS LastPresetStatus = NV_ENC_SUCCESS;
 
@@ -887,6 +891,7 @@ bool FNVENCSession::Open(ENVENCCodec Codec, void* InDevice, NV_ENC_DEVICE_TYPE I
         for (int32 CandidateIndex = 0; CandidateIndex < PresetCandidates.Num(); ++CandidateIndex)
         {
             const FPresetCandidate& Candidate = PresetCandidates[CandidateIndex];
+            NV_ENC_PRESET_CONFIG PresetConfig = {};
             LastPresetStatus = QueryPresetConfig(Encoder, Candidate, PresetConfig);
 
             const bool bShouldRetryWithoutHandle =
@@ -901,6 +906,9 @@ bool FNVENCSession::Open(ENVENCCodec Codec, void* InDevice, NV_ENC_DEVICE_TYPE I
 
                 LastPresetStatus = QueryPresetConfig(nullptr, Candidate, PresetConfig);
             }
+
+            PresetStatuses[CandidateIndex] = LastPresetStatus;
+            PresetConfigs[CandidateIndex] = PresetConfig;
 
             if (LastPresetStatus == NV_ENC_SUCCESS)
             {
@@ -934,165 +942,185 @@ bool FNVENCSession::Open(ENVENCCodec Codec, void* InDevice, NV_ENC_DEVICE_TYPE I
             return false;
         }
 
-        const FPresetCandidate& SelectedPreset = PresetCandidates[SelectedPresetIndex];
-        const FString SelectedPresetName = SelectedPreset.Description.IsEmpty()
-            ? FNVENCDefs::PresetGuidToString(FromWindowsGuid(SelectedPreset.Guid))
-            : SelectedPreset.Description;
-
-        UE_LOG(LogNVENCSession, Log, TEXT("NVENC session ✓ Selected preset configuration: %s"), *SelectedPresetName);
-
-        if (SelectedPresetIndex > 0)
+        auto InitializeWithPreset = [&](int32 CandidateIndex) -> bool
         {
-            UE_LOG(LogNVENCSession, Log, TEXT("Using fallback NVENC preset %s after trying %d options."), *SelectedPresetName, SelectedPresetIndex + 1);
-        }
+            const FPresetCandidate& SelectedPreset = PresetCandidates[CandidateIndex];
+            const NV_ENC_PRESET_CONFIG& PresetConfig = PresetConfigs[CandidateIndex];
+            const FString SelectedPresetName = SelectedPreset.Description.IsEmpty()
+                ? FNVENCDefs::PresetGuidToString(FromWindowsGuid(SelectedPreset.Guid))
+                : SelectedPreset.Description;
 
-        EncodeConfig = PresetConfig.presetCfg;
-        EncodeConfig.version = FNVENCDefs::PatchStructVersion(NV_ENC_CONFIG_VER, ApiVersion);
-        EncodeConfig.rcParams.rateControlMode = ToNVRateControl(Parameters.RateControlMode);
-        EncodeConfig.rcParams.averageBitRate = Parameters.TargetBitrate;
-        EncodeConfig.rcParams.maxBitRate = Parameters.MaxBitrate;
-        EncodeConfig.rcParams.enableLookahead = Parameters.bEnableLookahead ? 1u : 0u;
-        EncodeConfig.rcParams.enableAQ = Parameters.bEnableAdaptiveQuantization ? 1u : 0u;
-        EncodeConfig.rcParams.enableTemporalAQ = Parameters.bEnableAdaptiveQuantization ? 1u : 0u;
-        EncodeConfig.rcParams.enableInitialRCQP = (Parameters.QPMax >= 0 || Parameters.QPMin >= 0) ? 1u : 0u;
-        EncodeConfig.rcParams.constQP.qpInterB = Parameters.QPMax >= 0 ? Parameters.QPMax : EncodeConfig.rcParams.constQP.qpInterB;
-        EncodeConfig.rcParams.constQP.qpInterP = Parameters.QPMax >= 0 ? Parameters.QPMax : EncodeConfig.rcParams.constQP.qpInterP;
-        EncodeConfig.rcParams.constQP.qpIntra = Parameters.QPMin >= 0 ? Parameters.QPMin : EncodeConfig.rcParams.constQP.qpIntra;
-        EncodeConfig.rcParams.multiPass = ToNVMultiPass(Parameters.MultipassMode);
-        EncodeConfig.gopLength = Parameters.GOPLength == 0 ? NVENC_INFINITE_GOPLENGTH : Parameters.GOPLength;
-        EncodeConfig.frameIntervalP = 1;
-        EncodeConfig.frameFieldMode = NV_ENC_PARAMS_FRAME_FIELD_MODE_FRAME;
-        EncodeConfig.mvPrecision = NV_ENC_MV_PRECISION_QUARTER_PEL;
+            EncodeConfig = PresetConfig.presetCfg;
+            EncodeConfig.version = FNVENCDefs::PatchStructVersion(NV_ENC_CONFIG_VER, ApiVersion);
+            EncodeConfig.rcParams.rateControlMode = ToNVRateControl(Parameters.RateControlMode);
+            EncodeConfig.rcParams.averageBitRate = Parameters.TargetBitrate;
+            EncodeConfig.rcParams.maxBitRate = Parameters.MaxBitrate;
+            EncodeConfig.rcParams.enableLookahead = Parameters.bEnableLookahead ? 1u : 0u;
+            EncodeConfig.rcParams.enableAQ = Parameters.bEnableAdaptiveQuantization ? 1u : 0u;
+            EncodeConfig.rcParams.enableTemporalAQ = Parameters.bEnableAdaptiveQuantization ? 1u : 0u;
+            EncodeConfig.rcParams.enableInitialRCQP = (Parameters.QPMax >= 0 || Parameters.QPMin >= 0) ? 1u : 0u;
+            EncodeConfig.rcParams.constQP.qpInterB = Parameters.QPMax >= 0 ? Parameters.QPMax : EncodeConfig.rcParams.constQP.qpInterB;
+            EncodeConfig.rcParams.constQP.qpInterP = Parameters.QPMax >= 0 ? Parameters.QPMax : EncodeConfig.rcParams.constQP.qpInterP;
+            EncodeConfig.rcParams.constQP.qpIntra = Parameters.QPMin >= 0 ? Parameters.QPMin : EncodeConfig.rcParams.constQP.qpIntra;
+            EncodeConfig.rcParams.multiPass = ToNVMultiPass(Parameters.MultipassMode);
+            EncodeConfig.gopLength = Parameters.GOPLength == 0 ? NVENC_INFINITE_GOPLENGTH : Parameters.GOPLength;
+            EncodeConfig.frameIntervalP = 1;
+            EncodeConfig.frameFieldMode = NV_ENC_PARAMS_FRAME_FIELD_MODE_FRAME;
+            EncodeConfig.mvPrecision = NV_ENC_MV_PRECISION_QUARTER_PEL;
 
-        if (Parameters.Codec == ENVENCCodec::H264)
-        {
-            EncodeConfig.profileGUID = NV_ENC_H264_PROFILE_MAIN_GUID;
-            EncodeConfig.encodeCodecConfig.h264Config.idrPeriod = EncodeConfig.gopLength;
-        }
+            if (Parameters.Codec == ENVENCCodec::H264)
+            {
+                EncodeConfig.profileGUID = NV_ENC_H264_PROFILE_MAIN_GUID;
+                EncodeConfig.encodeCodecConfig.h264Config.idrPeriod = EncodeConfig.gopLength;
+            }
 
-        ENVENCBufferFormat EffectiveBufferFormat = Parameters.BufferFormat;
-        NvBufferFormat = ToNVFormat(EffectiveBufferFormat);
-        if (Parameters.Codec == ENVENCCodec::H264 && EffectiveBufferFormat != ENVENCBufferFormat::NV12)
-        {
-            UE_LOG(LogNVENCSession, Warning,
-                TEXT("NVENC session switching H.264 input format to NV12 8-bit 4:2:0 for compatibility."));
-            NvBufferFormat = NV_ENC_BUFFER_FORMAT_NV12;
-            EffectiveBufferFormat = ENVENCBufferFormat::NV12;
-        }
-        else if (Parameters.Codec == ENVENCCodec::HEVC && EffectiveBufferFormat != ENVENCBufferFormat::NV12)
-        {
-            const FString OriginalFormat = FNVENCDefs::BufferFormatToString(EffectiveBufferFormat);
-            UE_LOG(LogNVENCSession, Warning,
-                TEXT("NVENC session switching HEVC input format %s to NV12 8-bit 4:2:0 for compatibility."),
-                *OriginalFormat);
-            NvBufferFormat = NV_ENC_BUFFER_FORMAT_NV12;
-            EffectiveBufferFormat = ENVENCBufferFormat::NV12;
-        }
+            ENVENCBufferFormat EffectiveBufferFormat = Parameters.BufferFormat;
+            NvBufferFormat = ToNVFormat(EffectiveBufferFormat);
+            if (Parameters.Codec == ENVENCCodec::H264 && EffectiveBufferFormat != ENVENCBufferFormat::NV12)
+            {
+                UE_LOG(LogNVENCSession, Warning,
+                    TEXT("NVENC session switching H.264 input format to NV12 8-bit 4:2:0 for compatibility."));
+                NvBufferFormat = NV_ENC_BUFFER_FORMAT_NV12;
+                EffectiveBufferFormat = ENVENCBufferFormat::NV12;
+            }
+            else if (Parameters.Codec == ENVENCCodec::HEVC && EffectiveBufferFormat != ENVENCBufferFormat::NV12)
+            {
+                const FString OriginalFormat = FNVENCDefs::BufferFormatToString(EffectiveBufferFormat);
+                UE_LOG(LogNVENCSession, Warning,
+                    TEXT("NVENC session switching HEVC input format %s to NV12 8-bit 4:2:0 for compatibility."),
+                    *OriginalFormat);
+                NvBufferFormat = NV_ENC_BUFFER_FORMAT_NV12;
+                EffectiveBufferFormat = ENVENCBufferFormat::NV12;
+            }
 
-        const NV_ENC_BIT_DEPTH NvBitDepth = ToNVBitDepth(NvBufferFormat);
-        const uint32 NvChromaFormat = GetChromaFormatIDC(NvBufferFormat);
+            const NV_ENC_BIT_DEPTH NvBitDepth = ToNVBitDepth(NvBufferFormat);
+            const uint32 NvChromaFormat = GetChromaFormatIDC(NvBufferFormat);
 
-        if (Parameters.Codec == ENVENCCodec::H264)
-        {
-            EncodeConfig.encodeCodecConfig.h264Config.chromaFormatIDC = NvChromaFormat;
-            EncodeConfig.encodeCodecConfig.h264Config.inputBitDepth = NvBitDepth;
-            EncodeConfig.encodeCodecConfig.h264Config.outputBitDepth = NvBitDepth;
-        }
-        else
-        {
-            const bool bIs10Bit = NvBitDepth == NV_ENC_BIT_DEPTH_10;
+            if (Parameters.Codec == ENVENCCodec::H264)
+            {
+                EncodeConfig.encodeCodecConfig.h264Config.chromaFormatIDC = NvChromaFormat;
+                EncodeConfig.encodeCodecConfig.h264Config.inputBitDepth = NvBitDepth;
+                EncodeConfig.encodeCodecConfig.h264Config.outputBitDepth = NvBitDepth;
+            }
+            else
+            {
+                const bool bIs10Bit = NvBitDepth == NV_ENC_BIT_DEPTH_10;
 #if defined(NV_ENC_HEVC_PROFILE_MAIN10_GUID)
-            EncodeConfig.profileGUID = bIs10Bit ? NV_ENC_HEVC_PROFILE_MAIN10_GUID : NV_ENC_HEVC_PROFILE_MAIN_GUID;
+                EncodeConfig.profileGUID = bIs10Bit ? NV_ENC_HEVC_PROFILE_MAIN10_GUID : NV_ENC_HEVC_PROFILE_MAIN_GUID;
 #else
-            EncodeConfig.profileGUID = NV_ENC_HEVC_PROFILE_MAIN_GUID;
+                EncodeConfig.profileGUID = NV_ENC_HEVC_PROFILE_MAIN_GUID;
 #endif
 
-            NV_ENC_CONFIG_HEVC& HevcConfig = EncodeConfig.encodeCodecConfig.hevcConfig;
-            FMemory::Memzero(&HevcConfig, sizeof(NV_ENC_CONFIG_HEVC));
+                NV_ENC_CONFIG_HEVC& HevcConfig = EncodeConfig.encodeCodecConfig.hevcConfig;
+                FMemory::Memzero(&HevcConfig, sizeof(NV_ENC_CONFIG_HEVC));
 
-            HevcConfig.level = NV_ENC_LEVEL_AUTOSELECT;
-            HevcConfig.tier = NV_ENC_TIER_HEVC_MAIN;
-            HevcConfig.minCUSize = NV_ENC_HEVC_CUSIZE_AUTOSELECT;
-            HevcConfig.maxCUSize = NV_ENC_HEVC_CUSIZE_32x32;
-            HevcConfig.chromaFormatIDC = NvChromaFormat;
-            HevcConfig.inputBitDepth = NvBitDepth;
-            HevcConfig.outputBitDepth = NvBitDepth;
-            HevcConfig.idrPeriod = EncodeConfig.gopLength;
-            HevcConfig.useBFramesAsRef = NV_ENC_BFRAME_REF_MODE_DISABLED;
-            HevcConfig.numRefL0 = NV_ENC_NUM_REF_FRAMES_AUTOSELECT;
-            HevcConfig.numRefL1 = NV_ENC_NUM_REF_FRAMES_AUTOSELECT;
+                HevcConfig.level = NV_ENC_LEVEL_AUTOSELECT;
+                HevcConfig.tier = NV_ENC_TIER_HEVC_MAIN;
+                HevcConfig.minCUSize = NV_ENC_HEVC_CUSIZE_AUTOSELECT;
+                HevcConfig.maxCUSize = NV_ENC_HEVC_CUSIZE_32x32;
+                HevcConfig.chromaFormatIDC = NvChromaFormat;
+                HevcConfig.inputBitDepth = NvBitDepth;
+                HevcConfig.outputBitDepth = NvBitDepth;
+                HevcConfig.idrPeriod = EncodeConfig.gopLength;
+                HevcConfig.useBFramesAsRef = NV_ENC_BFRAME_REF_MODE_DISABLED;
+                HevcConfig.numRefL0 = NV_ENC_NUM_REF_FRAMES_AUTOSELECT;
+                HevcConfig.numRefL1 = NV_ENC_NUM_REF_FRAMES_AUTOSELECT;
 
 #if defined(NV_ENC_CONFIG_HEVC_PIXEL_BIT_DEPTH_MINUS8)
-            HevcConfig.pixelBitDepthMinus8 = bIs10Bit ? 2u : 0u;
+                HevcConfig.pixelBitDepthMinus8 = bIs10Bit ? 2u : 0u;
 #endif
-        }
+            }
 
-        InitializeParams = {};
-        InitializeParams.version = FNVENCDefs::PatchStructVersion(NV_ENC_INITIALIZE_PARAMS_VER, ApiVersion);
-        InitializeParams.encodeGUID = CodecGuid;
-        InitializeParams.presetGUID = SelectedPreset.Guid;
-        InitializeParams.tuningInfo = SelectedPreset.Tuning;
-        InitializeParams.encodeWidth = Parameters.Width;
-        InitializeParams.encodeHeight = Parameters.Height;
-        InitializeParams.darWidth = Parameters.Width;
-        InitializeParams.darHeight = Parameters.Height;
-        InitializeParams.frameRateNum = Parameters.Framerate == 0 ? 60 : Parameters.Framerate;
-        InitializeParams.frameRateDen = 1;
-        InitializeParams.enablePTD = 1;
-        InitializeParams.encodeConfig = &EncodeConfig;
-        InitializeParams.maxEncodeWidth = Parameters.Width;
-        InitializeParams.maxEncodeHeight = Parameters.Height;
-        InitializeParams.bufferFormat = NvBufferFormat;
-        InitializeParams.enableEncodeAsync = 0;
+            InitializeParams = {};
+            InitializeParams.version = FNVENCDefs::PatchStructVersion(NV_ENC_INITIALIZE_PARAMS_VER, ApiVersion);
+            InitializeParams.encodeGUID = CodecGuid;
+            InitializeParams.presetGUID = SelectedPreset.Guid;
+            InitializeParams.tuningInfo = SelectedPreset.Tuning;
+            InitializeParams.encodeWidth = Parameters.Width;
+            InitializeParams.encodeHeight = Parameters.Height;
+            InitializeParams.darWidth = Parameters.Width;
+            InitializeParams.darHeight = Parameters.Height;
+            InitializeParams.frameRateNum = Parameters.Framerate == 0 ? 60 : Parameters.Framerate;
+            InitializeParams.frameRateDen = 1;
+            InitializeParams.enablePTD = 1;
+            InitializeParams.encodeConfig = &EncodeConfig;
+            InitializeParams.maxEncodeWidth = Parameters.Width;
+            InitializeParams.maxEncodeHeight = Parameters.Height;
+            InitializeParams.bufferFormat = NvBufferFormat;
+            InitializeParams.enableEncodeAsync = 0;
 
-        Status = InitializeEncoder(Encoder, &InitializeParams);
-        if (Status != NV_ENC_SUCCESS)
+            Status = InitializeEncoder(Encoder, &InitializeParams);
+            if (Status != NV_ENC_SUCCESS)
+            {
+                const FString StatusString = FNVENCDefs::StatusToString(Status);
+                const FString CodecString = FNVENCDefs::CodecToString(Parameters.Codec);
+                const FString PresetString = SelectedPresetName;
+                const FString ProfileString = ProfileGuidToString(EncodeConfig.profileGUID);
+                const uint32 LevelValue = Parameters.Codec == ENVENCCodec::H264
+                    ? EncodeConfig.encodeCodecConfig.h264Config.level
+                    : EncodeConfig.encodeCodecConfig.hevcConfig.level;
+                const FString LevelString = LevelToString(LevelValue);
+                const FNVENCAPIVersion RuntimeVersion = FNVENCDefs::DecodeApiVersion(ApiVersion);
+                const FNVENCAPIVersion BuildVersion = FNVENCDefs::DecodeApiVersion(NVENCAPI_VERSION);
+
+                UE_LOG(LogNVENCSession, Warning,
+                    TEXT("%s ✗ NvEncInitializeEncoder failed: %s (Codec=%s, Preset=%s, Profile=%s, Level=%s, API runtime=%s (0x%08x), API build=%s (0x%08x))"),
+                    ContextLabel,
+                    *StatusString,
+                    *CodecString,
+                    *PresetString,
+                    *ProfileString,
+                    *LevelString,
+                    *FNVENCDefs::VersionToString(RuntimeVersion),
+                    ApiVersion,
+                    *FNVENCDefs::VersionToString(BuildVersion),
+                    NVENCAPI_VERSION);
+
+                LastErrorMessage = FString::Printf(
+                    TEXT("NvEncInitializeEncoder failed: %s (Codec=%s, Preset=%s, Profile=%s, Level=%s, API runtime=%s (0x%08x), API build=%s (0x%08x))"),
+                    *StatusString,
+                    *CodecString,
+                    *PresetString,
+                    *ProfileString,
+                    *LevelString,
+                    *FNVENCDefs::VersionToString(RuntimeVersion),
+                    ApiVersion,
+                    *FNVENCDefs::VersionToString(BuildVersion),
+                    NVENCAPI_VERSION);
+                return false;
+            }
+
+            CurrentParameters = Parameters;
+            CurrentParameters.BufferFormat = EffectiveBufferFormat;
+            CurrentParameters.ActivePresetGuid = FromWindowsGuid(SelectedPreset.Guid);
+            CurrentParameters.ActiveTuning = FromNVTuning(SelectedPreset.Tuning);
+            bIsInitialised = true;
+
+            UE_LOG(LogNVENCSession, Log, TEXT("NVENC session ✓ Selected preset configuration: %s"), *SelectedPresetName);
+            if (CandidateIndex > 0)
+            {
+                UE_LOG(LogNVENCSession, Log, TEXT("Using fallback NVENC preset %s after trying %d options."), *SelectedPresetName, CandidateIndex + 1);
+            }
+
+            UE_LOG(LogNVENCSession, Log, TEXT("%s ✓ Encoder initialised: %s"), ContextLabel, *FNVENCParameterMapper::ToDebugString(CurrentParameters));
+            return true;
+        };
+
+        for (int32 CandidateIndex = SelectedPresetIndex; CandidateIndex < PresetCandidates.Num(); ++CandidateIndex)
         {
-            const FString StatusString = FNVENCDefs::StatusToString(Status);
-            const FString CodecString = FNVENCDefs::CodecToString(Parameters.Codec);
-            const FString PresetString = SelectedPresetName;
-            const FString ProfileString = ProfileGuidToString(EncodeConfig.profileGUID);
-            const uint32 LevelValue = Parameters.Codec == ENVENCCodec::H264
-                ? EncodeConfig.encodeCodecConfig.h264Config.level
-                : EncodeConfig.encodeCodecConfig.hevcConfig.level;
-            const FString LevelString = LevelToString(LevelValue);
-            const FNVENCAPIVersion RuntimeVersion = FNVENCDefs::DecodeApiVersion(ApiVersion);
-            const FNVENCAPIVersion BuildVersion = FNVENCDefs::DecodeApiVersion(NVENCAPI_VERSION);
+            if (PresetStatuses[CandidateIndex] != NV_ENC_SUCCESS)
+            {
+                continue;
+            }
 
-            UE_LOG(LogNVENCSession, Error,
-                TEXT("%s ✗ NvEncInitializeEncoder failed: %s (Codec=%s, Preset=%s, Profile=%s, Level=%s, API runtime=%s (0x%08x), API build=%s (0x%08x))"),
-                ContextLabel,
-                *StatusString,
-                *CodecString,
-                *PresetString,
-                *ProfileString,
-                *LevelString,
-                *FNVENCDefs::VersionToString(RuntimeVersion),
-                ApiVersion,
-                *FNVENCDefs::VersionToString(BuildVersion),
-                NVENCAPI_VERSION);
-
-            LastErrorMessage = FString::Printf(
-                TEXT("NvEncInitializeEncoder failed: %s (Codec=%s, Preset=%s, Profile=%s, Level=%s, API runtime=%s (0x%08x), API build=%s (0x%08x))"),
-                *StatusString,
-                *CodecString,
-                *PresetString,
-                *ProfileString,
-                *LevelString,
-                *FNVENCDefs::VersionToString(RuntimeVersion),
-                ApiVersion,
-                *FNVENCDefs::VersionToString(BuildVersion),
-                NVENCAPI_VERSION);
-            return false;
+            if (InitializeWithPreset(CandidateIndex))
+            {
+                return true;
+            }
         }
 
-        CurrentParameters = Parameters;
-        CurrentParameters.BufferFormat = EffectiveBufferFormat;
-        CurrentParameters.ActivePresetGuid = FromWindowsGuid(SelectedPreset.Guid);
-        CurrentParameters.ActiveTuning = FromNVTuning(SelectedPreset.Tuning);
-        bIsInitialised = true;
-        UE_LOG(LogNVENCSession, Log, TEXT("%s ✓ Encoder initialised: %s"), ContextLabel, *FNVENCParameterMapper::ToDebugString(CurrentParameters));
-        return true;
+        UE_LOG(LogNVENCSession, Error, TEXT("NvEncInitializeEncoder failed for all attempted presets."));
+        return false;
 #endif
     }
 
