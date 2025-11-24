@@ -333,9 +333,10 @@ namespace
         const double SinLon = FMath::Sin(Longitude);
 
         FVector Direction;
-        Direction.X = CosLat * CosLon;
-        Direction.Y = SinLat;
-        Direction.Z = CosLat * SinLon;
+        // Match UE's axis conventions (X forward, Y right, Z up) so latitude maps to Z.
+        Direction.X = CosLat * CosLon; // Forward (+X)
+        Direction.Y = CosLat * SinLon; // Right (+Y)
+        Direction.Z = SinLat;          // Up (+Z)
         return Direction.GetSafeNormal();
     }
 

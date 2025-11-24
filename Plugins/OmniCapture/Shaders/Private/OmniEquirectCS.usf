@@ -31,9 +31,11 @@ float3 DirectionFromEquirect(uint2 Pixel, float2 EyeRes, out float Latitude)
     float SinLon = sin(Longitude);
 
     float3 Dir;
-    Dir.x = CosLat * CosLon;
-    Dir.y = SinLat;
-    Dir.z = CosLat * SinLon;
+    // Use UE's coordinate system where Z is up and Y is right.
+    // Longitude rotates around the up axis (Z), while latitude tilts toward +/-Z.
+    Dir.x = CosLat * CosLon; // Forward (+X)
+    Dir.y = CosLat * SinLon; // Right (+Y)
+    Dir.z = SinLat;          // Up (+Z)
     return normalize(Dir);
 }
 
